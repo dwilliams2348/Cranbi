@@ -127,6 +127,7 @@ char* GetMemoryUsageStr()
         offset += length;
     }
 
+    // _strdup not working on linux, use strdup
     char* outStr = _strdup(buffer);
     return outStr;
 }

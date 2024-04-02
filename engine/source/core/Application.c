@@ -4,6 +4,7 @@
 #include "Logger.h"
 #include "platform/Platform.h"
 #include "core/CMemory.h"
+#include "core/Event.h"
 
 typedef struct ApplicationState
 {
@@ -43,6 +44,12 @@ b8 ApplicationCreate(Game* _gameInst)
     //setting up application state
     appState.isRunning = TRUE;
     appState.isSuspended = FALSE;
+
+    if(!EventInitialize())
+    {
+        LOG_ERROR("Event system failed to initialize, Application cannot continue.");
+        return FALSE;
+    }
 
     if(!PlatformStartup(&appState.platform, 
         _gameInst->appConfig.name, 
@@ -98,6 +105,8 @@ b8 ApplicationRun()
     }
 
     appState.isRunning = FALSE;
+
+    EventShutdown();
 
     PlatformShutdown(&appState.platform);
 
