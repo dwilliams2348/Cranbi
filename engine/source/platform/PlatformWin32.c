@@ -1,4 +1,4 @@
-#include "platform/Platform.h"
+#include "Platform.h"
 
 //Windows platform layer
 #if CPLATFORM_WINDOWS
