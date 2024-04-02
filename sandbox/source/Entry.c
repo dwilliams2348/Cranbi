@@ -1,6 +1,6 @@
 #include <Entry.h>
-//TODO: remove
-#include <platform/Platform.h>
+
+#include <core/CMemory.h>
 
 #include "Game.h"
 
@@ -19,7 +19,7 @@ b8 CreateGame(Game* _outGame)
     _outGame->onResize = GameOnResize;
 
     //create game state
-    _outGame->state = PlatformAllocate(sizeof(GameState), FALSE);
+    _outGame->state = cAllocate(sizeof(GameState), MEMORY_TAG_GAME);
 
     return TRUE;
 }
