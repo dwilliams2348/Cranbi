@@ -1,5 +1,6 @@
 #include "Logger.h"
 #include "Asserts.h"
+#include "platform/Platform.h"
 
 //TODO: Temp, remove
 #include <stdio.h>
@@ -26,10 +27,11 @@ void ShutdownLogging()
 void LogOutput(LogLevel _level, const char* _msg, ...)
 {
     const char* levelStrings[6] = {"[FATAL]: ", "[ERROR]: ", "[WARN]:  ", "[INFO]:  ", "[DEBUG]: ", "[TRACE]: "};
-    //b8 isError = _level < 2;
+    b8 isError = _level < WARN;
 
     //Imposes a 32k character limit on a single entry but don't print that long
-    char buffer[32000];
+    const i32 msgLength = 32000;
+    char buffer[msgLength];
     memset(buffer, 0, sizeof(buffer));
 
     //Format original message
@@ -37,12 +39,13 @@ void LogOutput(LogLevel _level, const char* _msg, ...)
     //Workaround for now is to just use the __builtin_va_list which GCC/Clang expects
     __builtin_va_list argPtr;
     va_start(argPtr, _msg);
-    vsnprintf(buffer, 32000, _msg, argPtr);
+    vsnprintf(buffer, msgLength, _msg, argPtr);
     va_end(argPtr);
 
-    char outMsg[32000];
+    char outMsg[msgLength];
     sprintf(outMsg, "%s%s\n", levelStrings[_level], buffer);
 
-    //TODO: platform specific output
-    printf("%s", outMsg);
+    //Platform specific output
+    if(isError) { PlatformConsoleWriteError(outMsg, _level); }
+    else { PlatformConsoleWrite(outMsg, _level); }
 }
