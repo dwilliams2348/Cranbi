@@ -1,7 +1,16 @@
-#include <test.h>
+#include<core/Logger.h>
+#include<core/Asserts.h>
 
-int main(void){
-    print_int(42);
+int main(void)
+{
+    LOG_FATAL("A fatal test message: %f", 3.14f);
+    LOG_ERROR("An error test message: %d", 42);
+    LOG_WARN("A warn test message: %s", "suck ween");
+    LOG_INFO("An info test message: %f", 6.9f);
+    LOG_DEBUG("A debug test message: %f", 42.0f);
+    LOG_TRACE("A trace test message");
+
+    CORE_ASSERT(1 == 0);
 
     return 0;
 }
