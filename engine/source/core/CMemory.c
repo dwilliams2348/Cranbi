@@ -1,6 +1,7 @@
 #include "CMemory.h"
 
 #include "core/Logger.h"
+#include "core/CString.h"
 #include "platform/Platform.h"
 
 //TODO: custom string lib
@@ -127,7 +128,8 @@ char* GetMemoryUsageStr()
         offset += length;
     }
 
-    // _strdup not working on linux, use strdup
-    char* outStr = _strdup(buffer);
+    
+    char* outStr = StringDuplicate(buffer);
+
     return outStr;
 }
