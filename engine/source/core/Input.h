@@ -10,7 +10,7 @@ typedef enum Buttons
     BUTTON_MAX_BUTTONS
 } Buttons;
 
-#define DEFINE_KEY(_name, _code) KEY_##_name = __code_model_small__
+#define DEFINE_KEY(_name, _code) KEY_##_name = _code
 
 typedef enum Keys
 {

@@ -22,6 +22,10 @@ typedef struct ApplicationState
 static b8 initialized = FALSE;
 static ApplicationState appState;
 
+//event handlers
+b8 ApplicationOnEvent(u16 _code, void* _sender, void* _listenerInst, EventContext _context);
+b8 ApplicationOnKey(u16 _code, void* _sender, void* _listenerInst, EventContext _context);
+
 b8 ApplicationCreate(Game* _gameInst)
 {
     if(initialized)
@@ -53,6 +57,10 @@ b8 ApplicationCreate(Game* _gameInst)
         LOG_ERROR("Event system failed to initialize, Application cannot continue.");
         return FALSE;
     }
+
+    EventRegister(EVENT_CODE_APPLICATION_QUIT, 0, ApplicationOnEvent);
+    EventRegister(EVENT_CODE_KEY_PRESSED, 0, ApplicationOnKey);
+    EventRegister(EVENT_CODE_KEY_RELEASED, 0, ApplicationOnKey);
 
     if(!PlatformStartup(&appState.platform, 
         _gameInst->appConfig.name, 
@@ -113,10 +121,69 @@ b8 ApplicationRun()
 
     appState.isRunning = FALSE;
 
+    EventUnregister(EVENT_CODE_APPLICATION_QUIT, 0, ApplicationOnEvent);
+    EventUnregister(EVENT_CODE_KEY_PRESSED, 0, ApplicationOnKey);
+    EventUnregister(EVENT_CODE_KEY_RELEASED, 0, ApplicationOnKey);
+
     EventShutdown();
     InputShutdown();
 
     PlatformShutdown(&appState.platform);
 
     return TRUE;
+}
+
+b8 ApplicationOnEvent(u16 _code, void* _sender, void* _listenerInst, EventContext _context)
+{
+    switch(_code)
+    {
+        case EVENT_CODE_APPLICATION_QUIT:
+        {
+            LOG_INFO("EVENT_CODE_APPLICATION_QUIT recieved, shutting down.");
+            appState.isRunning = FALSE;
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+b8 ApplicationOnKey(u16 _code, void* _sender, void* _listenerInst, EventContext _context)
+{
+    if(_code == EVENT_CODE_KEY_PRESSED)
+    {
+        u16 keyCode = _context.data.u16[0];
+        if(keyCode == KEY_ESCAPE)
+        {
+            //NOTE: techinally firing an event to itself, but there may be other listeners
+            EventContext data = {};
+            EventFire(EVENT_CODE_APPLICATION_QUIT, 0, data);
+
+            //block anything else from processing
+            return TRUE;
+        }
+        else if(keyCode == KEY_A)
+        {
+            //example for checking for a key
+            LOG_DEBUG("Explicit - KEY_A was pressed.");
+        }
+        else
+        {
+            LOG_DEBUG("'%c' key was pressed in window.", keyCode);
+        }
+    }
+    else if(_code == EVENT_CODE_KEY_RELEASED)
+    {
+        u16 keyCode = _context.data.u16[0];
+        if(keyCode == KEY_B)
+        {
+            LOG_DEBUG("Explicit - KEY_B was released.");
+        }
+        else
+        {
+            LOG_DEBUG("'%c' key was released in window.", keyCode);
+        }
+    }
+
+    return FALSE;
 }
