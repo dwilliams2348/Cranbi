@@ -7,6 +7,9 @@
 #include "core/CMemory.h"
 #include "core/Event.h"
 #include "core/Input.h"
+#include "core/Clock.h"
+
+#include "renderer/RendererFrontend.h"
 
 typedef struct ApplicationState
 {
@@ -16,6 +19,7 @@ typedef struct ApplicationState
     PlatformState platform;
     i16 width;
     i16 height;
+    Clock clock;
     f64 lastTime;
 }ApplicationState;
 
@@ -72,6 +76,12 @@ b8 ApplicationCreate(Game* _gameInst)
         return FALSE;
     }
 
+    if(!RendererInitialize(_gameInst->appConfig.name, &appState.platform))
+    {
+        LOG_FATAL("Failed to initialize renderer. Aborting application.");
+        return FALSE;
+    }
+
     //initialize game
     if(!appState.gameInst->initialize(appState.gameInst))
     {
@@ -88,6 +98,13 @@ b8 ApplicationCreate(Game* _gameInst)
 
 b8 ApplicationRun()
 {
+    ClockStart(&appState.clock);
+    ClockUpdate(&appState.clock);
+    appState.lastTime = appState.clock.elapsed;
+    f64 runningTime = 0;
+    u8 frameCount = 0;
+    f64 targetFrameSeconds = 1.f / 60;
+
     LOG_INFO(GetMemoryUsageStr());
 
     while(appState.isRunning) 
@@ -97,8 +114,14 @@ b8 ApplicationRun()
 
         if(!appState.isSuspended)
         {
+            //update clock
+            ClockUpdate(&appState.clock);
+            f64 currentTime = appState.clock.elapsed;
+            f64 delta = currentTime - appState.lastTime;
+            f64 frameStartTime = PlatformGetAbsoluteTime();
+
             //update routine
-            if(!appState.gameInst->update(appState.gameInst, (f32)0))
+            if(!appState.gameInst->update(appState.gameInst, (f32)delta))
             {
                 LOG_FATAL("Game update failed, shutting down");
                 appState.isRunning = FALSE;
@@ -106,16 +129,42 @@ b8 ApplicationRun()
             }
 
             //render routine
-            if(!appState.gameInst->render(appState.gameInst, (f32)0))
+            if(!appState.gameInst->render(appState.gameInst, (f32)delta))
             {
                 LOG_FATAL("Game render failed, shutting down");
                 appState.isRunning = FALSE;
                 break;
             }
 
+            //TODO: change packet creation
+            RenderPacket packet;
+            packet.deltaTime = delta;
+            RendererDrawFrame(&packet);
+
+            //figure out how long frame took
+            f64 frameEndTime = PlatformGetAbsoluteTime();
+            f64 frameElapsedTime = frameEndTime - frameStartTime;
+            runningTime += frameElapsedTime;
+            f64 remainingSeconds = targetFrameSeconds - frameElapsedTime;
+
+            if(remainingSeconds > 0)
+            {
+                u64 remainingMS = (remainingSeconds * 1000);
+
+                //if there is time left give it back to OS
+                b8 limitFrames = FALSE;
+                if(remainingMS > 0 && limitFrames)
+                    PlatformSleep(remainingMS - 1);
+
+                frameCount++;
+            }
+
             //NOTE: Input update/state chaning should be handled should be recorded
             //As a safety input is the last thing updated before end of frame.
-            InputUpdate(0);
+            InputUpdate(delta);
+
+            //update last time
+            appState.lastTime = currentTime;
         }
     }
 
@@ -127,6 +176,8 @@ b8 ApplicationRun()
 
     EventShutdown();
     InputShutdown();
+
+    RendererShutdown();
 
     PlatformShutdown(&appState.platform);
 
