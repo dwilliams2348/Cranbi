@@ -1,10 +1,12 @@
 #include "Application.h"
 #include "GameTypes.h"
 
-#include "Logger.h"
 #include "platform/Platform.h"
+
+#include "core/Logger.h" 
 #include "core/CMemory.h"
 #include "core/Event.h"
+#include "core/Input.h"
 
 typedef struct ApplicationState
 {
@@ -32,6 +34,7 @@ b8 ApplicationCreate(Game* _gameInst)
 
     //initialize subsystems
     InitializeLogging();
+    InputInitialize();
 
     //TODO: remove this
     LOG_FATAL("A fatal test message: %f", 3.14f);
@@ -101,12 +104,17 @@ b8 ApplicationRun()
                 appState.isRunning = FALSE;
                 break;
             }
+
+            //NOTE: Input update/state chaning should be handled should be recorded
+            //As a safety input is the last thing updated before end of frame.
+            InputUpdate(0);
         }
     }
 
     appState.isRunning = FALSE;
 
     EventShutdown();
+    InputShutdown();
 
     PlatformShutdown(&appState.platform);
 
