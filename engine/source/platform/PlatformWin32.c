@@ -3,11 +3,12 @@
 //Windows platform layer
 #if CPLATFORM_WINDOWS
 
-#include"core/Logger.h"
+#include "core/Logger.h"
+#include "core/Input.h"
 
-#include<windows.h>
-#include<windowsx.h> //param input extraction
-#include<stdlib.h>
+#include <windows.h>
+#include <windowsx.h> //param input extraction
+#include <stdlib.h>
 
 typedef struct InternalState
 {
@@ -223,24 +224,31 @@ LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARA
         case WM_SYSKEYUP:
         {
             //key pressed/released
-            //b8 pressed = (_msg == WM_KEYDOWN || _msg == WM_SYSKEYDOWN);
-            //TODO: input processing
+            b8 pressed = (_msg == WM_KEYDOWN || _msg == WM_SYSKEYDOWN);
+            Keys key = (u16)_wparam;
+
+            //pass to input subsystem for processing
+            InputProcessKey(key, pressed);
         } break;
         case WM_MOUSEMOVE:
         {
-            //i32 xPosition = GET_X_LPARAM(_lparam);
-            //i32 yPosition = GET_Y_LPARAM(_lparam);
-            //TODO: input processing
+            i32 xPosition = GET_X_LPARAM(_lparam);
+            i32 yPosition = GET_Y_LPARAM(_lparam);
+            
+            //pass to input subsystem
+            InputProcessMouseMove(xPosition, yPosition);
         } break;
         case WM_MOUSEWHEEL:
         {
-            //i32 zDelta = GET_WHEEL_DELTA_WPARAM(_wparam);
-            //if(zDelta != 0)
-            //{
+            i32 zDelta = GET_WHEEL_DELTA_WPARAM(_wparam);
+            if(zDelta != 0)
+            {
                 //flatten the input to an OS independent (-1, 1)
-            //    zDelta = (zDelta < 0) ? -1 : 1;
-                //TODO: input processing
-            //}
+                zDelta = (zDelta < 0) ? -1 : 1;
+                
+                //pass to input subsystem
+                InputProcessMouseWheel(zDelta);
+            }
         } break;
         case WM_LBUTTONDOWN:
         case WM_MBUTTONDOWN:
@@ -249,8 +257,27 @@ LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARA
         case WM_MBUTTONUP:
         case WM_RBUTTONUP:
         {
-            //b8 pressed = (_msg == WM_LBUTTONDOWN || _msg == WM_MBUTTONDOWN || _msg == WM_RBUTTONDOWN);
-            //TODO: input processing
+            b8 pressed = (_msg == WM_LBUTTONDOWN || _msg == WM_MBUTTONDOWN || _msg == WM_RBUTTONDOWN);
+            Buttons mouseButton = BUTTON_MAX_BUTTONS;
+            switch(_msg)
+            {
+                case WM_LBUTTONDOWN:
+                case WM_LBUTTONUP:
+                    mouseButton = BUTTON_LEFT;
+                    break;
+                case WM_MBUTTONDOWN:
+                case WM_MBUTTONUP:
+                    mouseButton = BUTTON_MIDDLE;
+                    break;
+                case WM_RBUTTONDOWN:
+                case WM_RBUTTONUP:
+                    mouseButton = BUTTON_RIGHT;
+                    break;
+            }
+
+            //pass to input system
+            if(mouseButton != BUTTON_MAX_BUTTONS)
+                InputProcessButton(mouseButton, pressed);
         } break;
     }
 
