@@ -6,6 +6,8 @@
 #include "core/Logger.h"
 #include "core/Input.h"
 
+#include "containers/DArray.h"
+
 #include <windows.h>
 #include <windowsx.h> //param input extraction
 #include <stdlib.h>
@@ -193,6 +195,11 @@ f64 PlatformGetAbsoluteTime()
 void PlatformSleep(u64 _ms)
 {
     Sleep(_ms);
+}
+
+void PlatformGetRequiredExtensionNames(const char*** _namesDArray)
+{
+    DArrayPush(*_namesDArray, &"VK_KHR_win32_surface");
 }
 
 LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARAM _lparam)

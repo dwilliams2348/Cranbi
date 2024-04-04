@@ -6,6 +6,8 @@
 #include "core/Event.h"
 #include "core/Input.h"
 
+#include "containers/DArray.h"
+
 #include <xcb/xcb.h>
 #include <X11/keysym.h>
 #include <X11/XKBlib.h> //sudo apt-get install libx11-dev
@@ -326,6 +328,11 @@ void PlatformSleep(u64 _ms)
 
     usleep((_ms % 1000) * 1000);
 #endif
+}
+
+void PlatformGetRequiredExtensionNames(const char*** _namesDArray)
+{
+    DArrayPush(*_namesDArray, &"VK_KHR_xcb_surface");
 }
 
 Keys TranslateKeycode(u32 _xKeycode)

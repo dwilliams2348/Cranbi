@@ -1,5 +1,5 @@
 {
-    "workbench.colorTheme": "Gruvbox Dark (Hard)",
+    "workbench.colorTheme": "Aura Dark",
     "xmlTools.enforcePrettySelfClosingTagOnFormat": true,
     "editor.minimap.enabled": false,
     "terminal.integrated.shell.windows": "c:/Program Files/PowerShell/7/pwsh.exe",
