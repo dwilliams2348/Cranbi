@@ -1,4 +1,4 @@
-#include "Platform.h"
+#include "platform/Platform.h"
 
 //Windows platform layer
 #if CPLATFORM_WINDOWS
@@ -12,10 +12,16 @@
 #include <windowsx.h> //param input extraction
 #include <stdlib.h>
 
+//for surface creation
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_win32.h>
+#include "renderer/vulkan/VulkanTypes.inl"
+
 typedef struct InternalState
 {
     HINSTANCE hInstance;
     HWND hwnd;
+    VkSurfaceKHR surface;
 } InternalState;
 
 //clock
@@ -200,6 +206,27 @@ void PlatformSleep(u64 _ms)
 void PlatformGetRequiredExtensionNames(const char*** _namesDArray)
 {
     DArrayPush(*_namesDArray, &"VK_KHR_win32_surface");
+}
+
+//surface creation for vulkan
+b8 PlatformCreateVulkanSurface(struct PlatformState* _state, struct VulkanContext* _context)
+{
+    //cast the known type
+    InternalState* state = (InternalState*)_state->InternalState;
+
+    VkWin32SurfaceCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+    createInfo.hinstance = state->hInstance;
+    createInfo.hwnd = state->hwnd;
+
+    VkResult result = vkCreateWin32SurfaceKHR(_context->instance, &createInfo, _context->allocator, &state->surface);
+    if(result != VK_SUCCESS)
+    {
+        LOG_FATAL("Vulkan surface creation failed.");
+        return FALSE;
+    }
+
+    _context->surface = state->surface;
+    return TRUE;
 }
 
 LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARAM _lparam)

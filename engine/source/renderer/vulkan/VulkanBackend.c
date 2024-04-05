@@ -2,6 +2,7 @@
 
 #include "VulkanTypes.inl"
 #include "VulkanPlatform.h"
+#include "VulkanDevice.h"
 
 #include "core/Logger.h"
 #include "core/CString.h"
@@ -123,6 +124,22 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     VK_CHECK(func(context.instance, &debugCreateInfo, context.allocator, &context.debugMessenger));
     LOG_DEBUG("Vulkan debugger created.");
 #endif
+
+    //surface creation
+    LOG_DEBUG("Creating Vulkan surface...");
+    if(!PlatformCreateVulkanSurface(_platform, &context))
+    {
+        LOG_ERROR("Failed to create platform surface.");
+        return FALSE;
+    }
+    LOG_DEBUG("Vulkan surface created");
+
+    //device creation
+    if(!VulkanDeviceCreate(&context))
+    {
+        LOG_ERROR("Failed to create Vulkan device.");
+        return FALSE;
+    }
 
     LOG_INFO("Vulkan renderer initialized successfully");
     return TRUE;
