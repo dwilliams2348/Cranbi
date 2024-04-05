@@ -39,12 +39,137 @@ b8 VulkanDeviceCreate(VulkanContext* _context)
     if(!SelectPhysicalDevice(_context))
         return FALSE;
 
+    LOG_INFO("Creating logical device...");
+
+    //NOTE: Do not create additional queues for shared indices.
+    b8 presentSharesGraphicsQueue = _context->device.graphicsQueueIndex == _context->device.presentQueueIndex;
+    b8 transferSharesGraphicsQueue = _context->device.graphicsQueueIndex == _context->device.transferQueueIndex;
+    u32 indexCount = 1;
+    if(!presentSharesGraphicsQueue)
+        indexCount++;
+
+    if(!transferSharesGraphicsQueue)
+        indexCount++;
+    
+    u32 indices[indexCount];
+    u8 index = 0;
+    indices[index++] = _context->device.graphicsQueueIndex;
+    if(!presentSharesGraphicsQueue)
+        indices[index++] = _context->device.presentQueueIndex;
+    
+    if(!transferSharesGraphicsQueue)
+        indices[index++] = _context->device.transferQueueIndex;
+
+    VkDeviceQueueCreateInfo queueCreateInfos[indexCount];
+    for (u32 i = 0; i < indexCount; ++i) 
+    {
+        queueCreateInfos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfos[i].queueFamilyIndex = indices[i];
+        queueCreateInfos[i].queueCount = 1;
+        if (indices[i] == _context->device.graphicsQueueIndex) 
+        {
+            queueCreateInfos[i].queueCount = 2;
+        }
+        queueCreateInfos[i].flags = 0;
+        queueCreateInfos[i].pNext = 0;
+        f32 queuePriority = 1.0f;
+        queueCreateInfos[i].pQueuePriorities = &queuePriority;
+    }
+
+    //request device features
+    //TODO: this should be config driven
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.samplerAnisotropy = VK_TRUE; //request anistrophy
+
+    VkDeviceCreateInfo deviceCreateInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+    deviceCreateInfo.queueCreateInfoCount = indexCount;
+    deviceCreateInfo.pQueueCreateInfos = queueCreateInfos;
+    deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+    deviceCreateInfo.enabledExtensionCount = 1;
+    const char* extensionNames = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    deviceCreateInfo.ppEnabledExtensionNames = &extensionNames;
+
+    //deprecated and ignored so pass nothing
+    deviceCreateInfo.enabledLayerCount = 0;
+    deviceCreateInfo.ppEnabledLayerNames = 0;
+
+    //Create the device
+    VK_CHECK(vkCreateDevice(
+        _context->device.physicalDevice,
+        &deviceCreateInfo,
+        _context->allocator,
+        &_context->device.logicalDevice));
+
+    LOG_INFO("Logical device created.");
+
+    //get queues
+    LOG_INFO("Getting queues...");
+    vkGetDeviceQueue(
+        _context->device.logicalDevice,
+        _context->device.graphicsQueueIndex,
+        0,
+        &_context->device.graphicsQueue);
+
+    vkGetDeviceQueue(
+        _context->device.logicalDevice,
+        _context->device.presentQueueIndex,
+        0,
+        &_context->device.presentQueue);
+
+    vkGetDeviceQueue(
+        _context->device.logicalDevice,
+        _context->device.transferQueueIndex,
+        0,
+        &_context->device.transferQueue);
+    LOG_INFO("Queues obtained.");
+
     return TRUE;
 }
 
 void VulkanDeviceDestroy(VulkanContext* _context)
 {
+    //unset queues
+    _context->device.graphicsQueue = 0;
+    _context->device.presentQueue = 0;
+    _context->device.transferQueue = 0;
 
+    //destroy logical device
+    LOG_INFO("Destroying logical device...");
+    if(_context->device.logicalDevice)
+    {
+        vkDestroyDevice(_context->device.logicalDevice, _context->allocator);
+        _context->device.logicalDevice = 0;
+    }
+
+    //physical devices are not destroyed.
+    LOG_INFO("Releasing physical device resources...");
+    _context->device.physicalDevice = 0;
+
+    if(_context->device.swapchainSupport.formats)
+    {
+        cFree(_context->device.swapchainSupport.formats,
+        sizeof(VkSurfaceFormatKHR) * _context->device.swapchainSupport.formatCount,
+        MEMORY_TAG_RENDERER);
+
+        _context->device.swapchainSupport.formats = 0;
+        _context->device.swapchainSupport.formatCount = 0;
+    }
+
+    if(_context->device.swapchainSupport.presentModes)
+    {
+        cFree(_context->device.swapchainSupport.presentModes,
+        sizeof(VkPresentModeKHR) * _context->device.swapchainSupport.presentModeCount,
+        MEMORY_TAG_RENDERER);
+
+        _context->device.swapchainSupport.presentModes = 0;
+        _context->device.swapchainSupport.presentModeCount = 0;
+    }
+
+    cZeroMemory(&_context->device.swapchainSupport.capabilities, sizeof(_context->device.swapchainSupport.capabilities));
+
+    _context->device.graphicsQueueIndex = -1;
+    _context->device.presentQueueIndex = -1;
+    _context->device.transferQueueIndex = -1;
 }
 
 void VulkanDeviceQuerySwapchainSupport(
