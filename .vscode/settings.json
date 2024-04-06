@@ -56,10 +56,10 @@
         "type_traits": "c",
         "typeinfo": "c",
         "windowsx.h": "c",
-        "vulkan_platform.h": "c",
-        "renderer_frontend.h": "c",
+        "VulkanPlatform.h": "c",
+        "RendererFrontend.h": "c",
         "system_error": "cpp",
-        "asserts.h": "c",
-        "cmemory.h": "c"
+        "Asserts.h": "c",
+        "CMemory.h": "c"
     }
 }

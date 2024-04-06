@@ -124,6 +124,14 @@ b8 VulkanDeviceCreate(VulkanContext* _context)
         &_context->device.transferQueue);
     LOG_INFO("Queues obtained.");
 
+    //create command pool for graphics queue
+    VkCommandPoolCreateInfo poolCreateInfo = { VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
+    poolCreateInfo.queueFamilyIndex = _context->device.graphicsQueueIndex;
+    poolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+    VK_CHECK(vkCreateCommandPool(_context->device.logicalDevice, &poolCreateInfo, _context->allocator, &_context->device.graphicsCommandPool));
+    LOG_INFO("Graphics command pool created.");
+
     return TRUE;
 }
 
@@ -133,6 +141,9 @@ void VulkanDeviceDestroy(VulkanContext* _context)
     _context->device.graphicsQueue = 0;
     _context->device.presentQueue = 0;
     _context->device.transferQueue = 0;
+
+    LOG_INFO("Destroying command pools...");
+    vkDestroyCommandPool(_context->device.logicalDevice, _context->device.graphicsCommandPool, _context->allocator);
 
     //destroy logical device
     LOG_INFO("Destroying logical device...");

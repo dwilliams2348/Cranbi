@@ -5,9 +5,11 @@
 #include "VulkanDevice.h"
 #include "VulkanSwapchain.h"
 #include "VulkanRenderpass.h"
+#include "VulkanCommandBuffer.h"
 
 #include "core/Logger.h"
 #include "core/CString.h"
+#include "core/CMemory.h"
 
 #include "containers/DArray.h"
 
@@ -22,6 +24,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     void* user_data);
 
 i32 FindMemoryIndex(u32 _typeFilter, u32 _propertyFlags);
+
+void CreateCommandBuffers(RendererBackend* _backend);
 
 b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appName, struct PlatformState* _platform)
 {
@@ -157,12 +161,30 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     0.f, 0.f, 0.2f, 1.f,
     1.f, 0);
 
+    //create command buffers
+    CreateCommandBuffers(_backend);
+
     LOG_INFO("Vulkan renderer initialized successfully");
     return TRUE;
 }
 
 void VulkanRendererBackendShutdown(RendererBackend* _backend)
 {
+    //destroy in opposite order of creation
+
+    //command buffers
+    for(u32 i = 0; i < context.swapchain.imageCount; ++i)
+    {
+        if(context.graphicsCommandBuffers[i].handle)
+        {
+            VulkanCommandBufferFree(&context, context.device.graphicsCommandPool, &context.graphicsCommandBuffers[i]);
+            context.graphicsCommandBuffers[i].handle = 0;
+        }
+    }
+
+    DArrayDestroy(context.graphicsCommandBuffers);
+    context.graphicsCommandBuffers = 0;
+
     //renderpass
     VulkanRenderpassDestroy(&context, &context.mainRenderpass);
 
@@ -246,4 +268,25 @@ i32 FindMemoryIndex(u32 _typeFilter, u32 _propertyFlags)
 
     LOG_WARN("Unable to find suitable memory type.");
     return -1;
+}
+
+void CreateCommandBuffers(RendererBackend* _backend)
+{
+    if(!context.graphicsCommandBuffers)
+    {
+        context.graphicsCommandBuffers = DArrayReserve(VulkanCommandBuffer, context.swapchain.imageCount);
+        for(u32 i = 0; i < context.swapchain.imageCount; ++i)
+            cZeroMemory(&context.graphicsCommandBuffers[i], sizeof(VulkanCommandBuffer));
+    }
+
+    for(u32 i = 0; i < context.swapchain.imageCount; ++i)
+    {
+        if(context.graphicsCommandBuffers[i].handle)
+            VulkanCommandBufferFree(&context, context.device.graphicsCommandPool, &context.graphicsCommandBuffers[i]);
+
+        cZeroMemory(&context.graphicsCommandBuffers[i], sizeof(VulkanCommandBuffer));
+        VulkanCommandBufferAllocate(&context, context.device.graphicsCommandPool, TRUE, &context.graphicsCommandBuffers[i]);
+    }
+
+    LOG_INFO("Vulkan command buffers created.");
 }
