@@ -4,6 +4,7 @@
 #include "VulkanPlatform.h"
 #include "VulkanDevice.h"
 #include "VulkanSwapchain.h"
+#include "VulkanRenderpass.h"
 
 #include "core/Logger.h"
 #include "core/CString.h"
@@ -150,12 +151,21 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     //swapchain creation
     VulkanSwapchainCreate(&context, context.framebufferWidth, context.framebufferHeight, &context.swapchain);
 
+    //renderpass creation
+    VulkanRenderpassCreate(&context, &context.mainRenderpass, 
+    0, 0, context.framebufferWidth, context.framebufferHeight,
+    0.f, 0.f, 0.2f, 1.f,
+    1.f, 0);
+
     LOG_INFO("Vulkan renderer initialized successfully");
     return TRUE;
 }
 
 void VulkanRendererBackendShutdown(RendererBackend* _backend)
 {
+    //renderpass
+    VulkanRenderpassDestroy(&context, &context.mainRenderpass);
+
     //swapchain
     VulkanSwapchainDestroy(&context, &context.swapchain);
 
