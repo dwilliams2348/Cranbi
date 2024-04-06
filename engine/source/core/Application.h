@@ -21,3 +21,5 @@ typedef struct ApplicationConfig
 CAPI b8 ApplicationCreate(struct Game* _gameInst);
 
 CAPI b8 ApplicationRun();
+
+void ApplicationGetFramebufferSize(u32* _width, u32* _height);

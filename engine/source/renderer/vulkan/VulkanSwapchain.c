@@ -90,6 +90,9 @@ void VulkanSwapchainPresent(
     }
     else if (result != VK_SUCCESS)
         LOG_FATAL("Failed to present swapchain image.");
+
+    //increment (and loop) the index
+    _context->currentFrame = (_context->currentFrame + 1) % _swapchain->maxFramesInFlight;
 }
 
 void create(VulkanContext* _context, u32 _width, u32 _height, VulkanSwapchain* _swapchain)
