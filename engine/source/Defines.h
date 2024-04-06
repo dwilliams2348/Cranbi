@@ -98,3 +98,5 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.\n");
 #       define CAPI
 #   endif
 #endif
+
+#define CCLAMP(_value, _min, _max) (_value <= _min) ? _min : (_value >= _max) ? _max : _value;

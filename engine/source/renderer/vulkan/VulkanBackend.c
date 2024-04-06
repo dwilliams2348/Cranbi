@@ -3,6 +3,7 @@
 #include "VulkanTypes.inl"
 #include "VulkanPlatform.h"
 #include "VulkanDevice.h"
+#include "VulkanSwapchain.h"
 
 #include "core/Logger.h"
 #include "core/CString.h"
@@ -19,8 +20,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
     void* user_data);
 
+i32 FindMemoryIndex(u32 _typeFilter, u32 _propertyFlags);
+
 b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appName, struct PlatformState* _platform)
 {
+    //function pointers
+    context.FindMemoryIndex = FindMemoryIndex;
+
     //TODO: custom allocator
     context.allocator = 0;
 
@@ -141,12 +147,28 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
         return FALSE;
     }
 
+    //swapchain creation
+    VulkanSwapchainCreate(&context, context.framebufferWidth, context.framebufferHeight, &context.swapchain);
+
     LOG_INFO("Vulkan renderer initialized successfully");
     return TRUE;
 }
 
 void VulkanRendererBackendShutdown(RendererBackend* _backend)
 {
+    //swapchain
+    VulkanSwapchainDestroy(&context, &context.swapchain);
+
+    LOG_DEBUG("Destroying Vulkan device...");
+    VulkanDeviceDestroy(&context);
+
+    LOG_DEBUG("Destroying Vulkan surface...");
+    if(context.surface)
+    {
+        vkDestroySurfaceKHR(context.instance, context.surface, context.allocator);
+        context.surface = 0;
+    }
+
     LOG_DEBUG("Destroying Vulkan debugger...");
     if (context.debugMessenger) 
     {
@@ -198,4 +220,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
     }
 
     return VK_FALSE;
+}
+
+i32 FindMemoryIndex(u32 _typeFilter, u32 _propertyFlags)
+{
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(context.device.physicalDevice, &memoryProperties);
+
+    for(u32 i = 0; i < memoryProperties.memoryTypeCount; ++i)
+    {
+        //check each memory type to see if its bit is set to 1
+        if(_typeFilter & (1 << i) && (memoryProperties.memoryTypes[i].propertyFlags & _propertyFlags) == _propertyFlags)
+            return 1;
+    }
+
+    LOG_WARN("Unable to find suitable memory type.");
+    return -1;
 }
