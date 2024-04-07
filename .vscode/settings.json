@@ -60,6 +60,7 @@
         "RendererFrontend.h": "c",
         "system_error": "cpp",
         "Asserts.h": "c",
-        "CMemory.h": "c"
+        "CMemory.h": "c",
+        "xlocale": "c"
     }
 }

@@ -35,7 +35,7 @@ void VulkanSwapchainDestroy(VulkanContext* _context, VulkanSwapchain* _swapchain
     destroy(_context, _swapchain);
 }
 
-b8 VulkanSwapchainAquireNextImageIndex(
+b8 VulkanSwapchainAcquireNextImageIndex(
     VulkanContext* _context,
     VulkanSwapchain* _swapchain,
     u64 _timeoutNS,
@@ -237,6 +237,7 @@ void create(VulkanContext* _context, u32 _width, u32 _height, VulkanSwapchain* _
 
 void destroy(VulkanContext* _context, VulkanSwapchain* _swapchain)
 {
+    vkDeviceWaitIdle(_context->device.logicalDevice);
     VulkanImageDestroy(_context, &_swapchain->depthAttachment);
 
     //only destroy the view, not the images, since those are owned by swapchain

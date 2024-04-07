@@ -247,12 +247,17 @@ LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARA
         case WM_SIZE:
         {
             //get updated size of window
-            //RECT r;
-            //GetClientRect(hwnd, &r);
-            //u32 width = r.right - r.left;
-            //u32 height = r.bottom - r.top;
+            RECT r;
+            GetClientRect(_hwnd, &r);
+            u32 width = r.right - r.left;
+            u32 height = r.bottom - r.top;
 
-            //TODO: fire an event for window resize
+            //fire the event, the applciation layer will pick this up but not handle it
+            //as it should be visible for other parts of the application
+            EventContext context;
+            context.data.u16[0] = (u16)width;
+            context.data.u16[1] = (u16)height;
+            EventFire(EVENT_CODE_RESIZED, 0, context);
         } break;
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN:

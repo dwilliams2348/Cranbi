@@ -17,7 +17,10 @@ void VulkanFenceCreate(VulkanContext* _context, b8 _createSignaled, VulkanFence*
 void VulkanFenceDestroy(VulkanContext* _context, VulkanFence* _fence) 
 {
     if(_fence->handle)
+    {
         vkDestroyFence(_context->device.logicalDevice, _fence->handle, _context->allocator);
+        _fence->handle = 0;
+    }
     
     _fence->isSignaled = FALSE;
 }

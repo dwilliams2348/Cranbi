@@ -30,6 +30,14 @@ void RendererShutdown()
     cFree(backend, sizeof(RendererBackend), MEMORY_TAG_RENDERER);
 }
 
+void RendererOnResize(u16 _width, u16 _height)
+{
+    if(backend)
+        backend->Resize(backend, _width, _height);
+    else
+        LOG_WARN("Renderer backend does not exist to accept resize: %i, %i", _width, _height);
+}
+
 b8 RendererBeginFrame(f32 _deltaTime)
 {
     return backend->BeginFrame(backend, _deltaTime);

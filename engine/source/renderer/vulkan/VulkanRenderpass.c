@@ -11,6 +11,19 @@ void VulkanRenderpassCreate(VulkanContext* _context,
 {
     LOG_INFO("Creating Vulkan render pass...");
 
+    _outRenderpass->x = _x;
+    _outRenderpass->y = _y;
+    _outRenderpass->w = _w;
+    _outRenderpass->h = _h;
+
+    _outRenderpass->r = _r;
+    _outRenderpass->g = _g;
+    _outRenderpass->b = _b;
+    _outRenderpass->a = _a;
+
+    _outRenderpass->depth = _depth;
+    _outRenderpass->stencil = _stencil;
+
     //create main subpass
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
