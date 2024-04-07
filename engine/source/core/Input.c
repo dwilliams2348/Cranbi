@@ -24,30 +24,34 @@ typedef struct InputState
 } InputState;
 
 //internal input state
-static b8 initialized = false;
-static InputState state = {};
+static InputState* pState;
 
-void InputInitialize()
+void InputSystemInitialize(u64* _memoryRequirements, void* _state)
 {
-    cZeroMemory(&state, sizeof(InputState));
-    initialized = true;
+    *_memoryRequirements = sizeof(InputState);
+    if(_state == 0)
+        return;
+    
+    cZeroMemory(_state, sizeof(InputState));
+    pState = _state;
+
     LOG_INFO("Input subsystem initialized.");
 }
 
-void InputShutdown()
+void InputSystemShutdown(void* _state)
 {
     //TODO: add shutdown routine when needed
-    initialized = false;
+    pState = 0;
 }
 
 void InputUpdate(f64 _deltaTime)
 {
-    if(!initialized)
+    if(!pState)
         return;
 
     //copy current states to previous states
-    cCopyMemory(&state.keyboardPrev, &state.keyboardCurr, sizeof(KeyboardState));
-    cCopyMemory(&state.mousePrev, &state.mouseCurr, sizeof(MouseState));
+    cCopyMemory(&pState->keyboardPrev, &pState->keyboardCurr, sizeof(KeyboardState));
+    cCopyMemory(&pState->mousePrev, &pState->mouseCurr, sizeof(MouseState));
 }
 
 void InputProcessKey(Keys _key, b8 _pressed)
@@ -80,10 +84,10 @@ void InputProcessKey(Keys _key, b8 _pressed)
     }
 
     //only handle if the state actually changed
-    if(state.keyboardCurr.keys[_key] != _pressed)
+    if(pState->keyboardCurr.keys[_key] != _pressed)
     {
         //update internal state
-        state.keyboardCurr.keys[_key] = _pressed;
+        pState->keyboardCurr.keys[_key] = _pressed;
 
         //fire off event for immediate processing
         EventContext context;
@@ -95,10 +99,10 @@ void InputProcessKey(Keys _key, b8 _pressed)
 void InputProcessButton(Buttons _button, b8 _pressed)
 {
     //only handle if the state has changed
-    if(state.mouseCurr.buttons[_button] != _pressed)
+    if(pState->mouseCurr.buttons[_button] != _pressed)
     {
         //update internal state
-        state.mouseCurr.buttons[_button] = _pressed;
+        pState->mouseCurr.buttons[_button] = _pressed;
 
         //fire off event for immediate processing
         EventContext context;
@@ -110,14 +114,14 @@ void InputProcessButton(Buttons _button, b8 _pressed)
 void InputProcessMouseMove(i16 _x, i16 _y)
 {
     //only process if different
-    if(state.mouseCurr.x != _x || state.mouseCurr.y != _y)
+    if(pState->mouseCurr.x != _x || pState->mouseCurr.y != _y)
     {
         //NOTE: enable if debugging
         //LOG_DEBUG("Mouse pos: %i, %i", _x, _y);
 
         //update internal state
-        state.mouseCurr.x = _x;
-        state.mouseCurr.y = _y;
+        pState->mouseCurr.x = _x;
+        pState->mouseCurr.y = _y;
 
         //fire event
         EventContext context;
@@ -139,90 +143,90 @@ void InputProcessMouseWheel(i8 _zDelta)
 
 b8 InputIsKeyDown(Keys _key)
 {
-    if(!initialized)
+    if(!pState)
         return false;
     
-    return state.keyboardCurr.keys[_key] == true;
+    return pState->keyboardCurr.keys[_key] == true;
 }
 
 b8 InputIsKeyUp(Keys _key)
 {
-    if(!initialized)
+    if(!pState)
         return true;
     
-    return state.keyboardCurr.keys[_key] == false;
+    return pState->keyboardCurr.keys[_key] == false;
 }
 
 b8 InputWasKeyDown(Keys _key)
 {
-    if(!initialized)
+    if(!pState)
         return false;
     
-    return state.keyboardPrev.keys[_key] == true;
+    return pState->keyboardPrev.keys[_key] == true;
 }
 
 b8 InputWasKeyUp(Keys _key)
 {
-    if(!initialized)
+    if(!pState)
         return true;
     
-    return state.keyboardPrev.keys[_key] == false;
+    return pState->keyboardPrev.keys[_key] == false;
 }
 
 b8 InputIsButtonDown(Buttons _button)
 {
-    if(!initialized)
+    if(!pState)
         return false;
     
-    return state.mouseCurr.buttons[_button] == true;
+    return pState->mouseCurr.buttons[_button] == true;
 }
 
 b8 InputIsButtonUp(Buttons _button)
 {
-    if(!initialized)
+    if(!pState)
         return true;
     
-    return state.mouseCurr.buttons[_button] == false;
+    return pState->mouseCurr.buttons[_button] == false;
 }
 
 b8 InputWasButtonDown(Buttons _button)
 {
-    if(!initialized)
+    if(!pState)
         return false;
     
-    return state.mousePrev.buttons[_button] == true;
+    return pState->mousePrev.buttons[_button] == true;
 }
 
 b8 InputWasButtonUp(Buttons _button)
 {
-    if(!initialized)
+    if(!pState)
         return true;
     
-    return state.mousePrev.buttons[_button] == false;
+    return pState->mousePrev.buttons[_button] == false;
 }
 
 void InputGetMousePosition(i32* _x, i32* _y)
 {
-    if(!initialized)
+    if(!pState)
     {
         *_x = 0;
         *_y = 0;
         return;
     }
 
-    *_x = state.mouseCurr.x;
-    *_y = state.mouseCurr.y;
+    *_x = pState->mouseCurr.x;
+    *_y = pState->mouseCurr.y;
 }
 
 void InputGetPreviousMousePosition(i32* _x, i32* _y)
 {
-    if(!initialized)
+    if(!pState)
     {
         *_x = 0;
         *_y = 0;
         return;
     }
 
-    *_x = state.mousePrev.x;
-    *_y = state.mousePrev.y;
+    *_x = pState->mousePrev.x;
+    *_y = pState->mousePrev.y;
 }

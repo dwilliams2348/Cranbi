@@ -27,8 +27,8 @@ typedef enum MemoryTag
     MEMORY_TAG_MAX_TAGS
 } MemoryTag;
 
-CAPI void InitializeMemory();
-CAPI void ShutdownMemory();
+CAPI void MemorySystemInitialize(u64* _memoryRequirement, void* _state);
+CAPI void MemorySystemShutdown(void* _state);
 
 CAPI void* cAllocate(u64 _size, MemoryTag _tag);
 CAPI void cFree(void* _block, u64 _size, MemoryTag _tag);

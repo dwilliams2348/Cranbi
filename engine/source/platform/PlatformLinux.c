@@ -30,7 +30,7 @@
 #include <vulkan/vulkan.h>
 #include "renderer/vulkan/VulkanTypes.inl"
 
-typedef struct InternalState
+typedef struct PlatformState
 {
     Display* display;
     xcb_connection_t* connection;
@@ -39,34 +39,38 @@ typedef struct InternalState
     xcb_atom_t wmProtocols;
     xcb_atom_t wmDeleteWin;
     VkSurfaceKHR surface;
-} InternalState;
+} PlatformState;
+
+static PlatformState* pState;
 
 //key translation
 Keys TranslateKeycode(u32 _xKeycode);
 
-b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, i32 _width, i32 _height)
+b8 PlatformStartup(u64* _memoryRequirement, void* _state, const char* _appName, i32 _x, i32 _y, i32 _width, i32 _height)
 {
-    //create internal state
-    _state->InternalState = malloc(sizeof(InternalState));
-    InternalState* state = (InternalState*)_state->InternalState;
+    *_memoryRequirement = sizeof(InternalState);
+    if(_state == 0)
+        return true;
+
+    pState = _state;
 
     //connect to x
-    state->display = XOpenDisplay(NULL);
+    pState->display = XOpenDisplay(NULL);
 
     //turn off key repeats
-    XAutoRepeatOff(state->display);
+    XAutoRepeatOff(pState->display);
 
     //retrieve conection from display
-    state->connection = XGetXCBConnection(state->display);
+    pState->connection = XGetXCBConnection(pState->display);
 
-    if(xcb_connection_has_error(state->connection))
+    if(xcb_connection_has_error(pState->connection))
     {
         LOG_FATAL("Failed to connect to the X server via XCB");
         return false;
     }
 
     //get data from x server
-    const struct xcb_setup_t* setup = xcb_get_setup(state->connection);
+    const struct xcb_setup_t* setup = xcb_get_setup(pState->connection);
 
     //loop through screens using iterator
     xcb_screen_iterator_t it = xcb_setup_roots_iterator(setup);
@@ -77,10 +81,10 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
     }
 
     //after screens have been looped through assign it
-    state->screen = it.data;
+    pState->screen = it.data;
 
     //allocate XID for the window to be created
-    state->window = xcb_generate_id(state->connection);
+    pState->window = xcb_generate_id(pState->connection);
 
     //register event types
     //XCB_CW_BACK_PIXEL = filling window bg with a single color
@@ -93,29 +97,29 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
                         XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_POINTER_MOTION     |
                         XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 
-    u32 valueList[] = { state->screen->black_pixel, eventValues };
+    u32 valueList[] = { pState->screen->black_pixel, eventValues };
 
     //create the window
     xcb_void_cookie_t cookie = xcb_create_window(
-        state->connection,
+        pState->connection,
         XCB_COPY_FROM_PARENT,           //depth
-        state->window,
-        state->screen->root,            //parent
+        pState->window,
+        pState->screen->root,            //parent
         _x,                             //x
         _y,                             //y
         _width,                         //width
         _height,                        //height
         0,                              //no border
         XCB_WINDOW_CLASS_INPUT_OUTPUT,  //class
-        state->screen->root_visual,
+        pState->screen->root_visual,
         eventMask,
         valueList);
 
     //change title of window
     xcb_change_property(
-        state->connection,
+        pState->connection,
         XCB_PROP_MODE_REPLACE,
-        state->window,
+        pState->window,
         XCB_ATOM_WM_NAME,
         XCB_ATOM_STRING,
         8, //data should be viewed 8 bits at a time
@@ -124,31 +128,31 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
 
     //tells the server to notify when the window manager tries to destroy window
     xcb_intern_atom_cookie_t wmDeleteCookie = xcb_intern_atom(
-        state->connection,
+        pState->connection,
         0,
         strlen("WM_DELETE_WINDOW"),
         "WM_DELETE_WINDOW");
     xcb_intern_atom_cookie_t wmProtocolsCookie = xcb_intern_atom(
-        state->connection,
+        pState->connection,
         0,
         strlen("WM_PROTOCOLS"),
         "WM_PROTOCOLS");
     xcb_intern_atom_reply_t* wmDeleteReply = xcb_intern_atom_reply(
-        state->connection,
+        pState->connection,
         wmDeleteCookie,
         NULL);
     xcb_intern_atom_reply_t* wmProtocolsReply = xcb_intern_atom_reply(
-        state->connection,
+        pState->connection,
         wmProtocolsCookie,
         NULL);
 
-    state->wmDeleteWin = wmDeleteReply->atom;
-    state->wmProtocols = wmProtocolsReply->atom;
+    pState->wmDeleteWin = wmDeleteReply->atom;
+    pState->wmProtocols = wmProtocolsReply->atom;
 
     xcb_change_property(
-        state->connection,
+        pState->connection,
         XCB_PROP_MODE_REPLACE,
-        state->window,
+        pState->window,
         wmProtocolsReply->atom,
         4,
         32,
@@ -156,10 +160,10 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
         &wmDeleteReply->atom);
 
     //map window to screen
-    xcb_map_window(state->connection, state->window);
+    xcb_map_window(pState->connection, pState->window);
 
     //flush the stream
-    i32 streamRes = xcb_flush(state->connection);
+    i32 streamRes = xcb_flush(pState->connection);
     if(streamRes <= 0)
     {
         LOG_FATAL("An error occured when flushing the stream: %d", streamRes);
@@ -169,118 +173,118 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
     return true;
 }
 
-void PlatformShutdown(PlatformState* _state)
+void PlatformShutdown(void* _state)
 {
-    //simply cast internal state
-    InternalState* state = (InternalState*)_state->InternalState;
+    if(pState)
+    {
+        //turn key repeats back on since its global on the OS
+        XAutoRepeatOn(state->display);
 
-    //turn key repeats back on since its global on the OS
-    XAutoRepeatOn(state->display);
-
-    xcb_destroy_window(state->connection, state->window);
+        xcb_destroy_window(state->connection, state->window);
+    }
 }
 
-b8 PlatformPumpMessages(PlatformState* _state)
+b8 PlatformPumpMessages()
 {
-    //simply cast to state
-    InternalState* state = (InternalState*)_state->InternalState;
-
-    xcb_generic_event_t* event;
-    xcb_client_message_event_t* cm;
-
-    b8 quitFlagged = false;
-
-    //poll for events until null is returned
-    while(event != 0)
+    if(pState)
     {
-        event = xcb_poll_for_event(state->connection);
-        if(event == 0)
-            break;
+        xcb_generic_event_t* event;
+        xcb_client_message_event_t* cm;
 
-        switch(event->response_type & ~0x80)
+        b8 quitFlagged = false;
+
+        //poll for events until null is returned
+        while(event != 0)
         {
-            case XCB_KEY_PRESS:
-            case XCB_KEY_RELEASE:
-            {
-                //key press event xcb_key_press_event_t and release are the same
-                xcb_key_press_event_t* kbEvent = (xcb_key_press_event_t*)event;
-                b8 pressed = event->response_type == XCB_KEY_PRESS;
-                xcb_keycode_t code = kbEvent->detail;
-                KeySym keySym = XkbKeycodeToKeysym(
-                    state->display,
-                    (KeyCode)code,
-                    0,
-                    code & ShiftMask ? 1 : 0);
-
-                Keys key = TranslateKeycode(keySym);
-
-                //pass to input subsystem
-                InputProcessKey(key, pressed);
-            } break;
-            case XCB_BUTTON_PRESS:
-            case XCB_BUTTON_RELEASE:
-            {
-                xcb_button_press_event_t* mouseEvent = (xcb_button_press_event_t*)event;
-                b8 pressed = event->response_type == XCB_BUTTON_PRESS;
-                Buttons mouseButton = BUTTON_MAX_BUTTONS;
-                switch(mouseEvent->detail)
-                {
-                    case XCB_BUTTON_INDEX_1:
-                        mouseButton = BUTTON_LEFT;
-                        break;
-                    case XCB_BUTTON_INDEX_2:
-                        mouseButton = BUTTON_MIDDLE;
-                        break;
-                    case XCB_BUTTON_INDEX_3:
-                        mouseButton = BUTTON_RIGHT;
-                        break;
-                }
-
-                //pass to input subsystem
-                if(mouseButton != BUTTON_MAX_BUTTONS)
-                    InputProcessButton(mouseButton, pressed);
-            } break;
-            case XCB_MOTION_NOTIFY:
-            {
-                //mouse movement
-                xcb_motion_notify_event_t* moveEvent = (xcb_motion_notify_event_t*)event;
-
-                //pass to input subsystem
-                InputProcessMouseMove(moveEvent->event_x, moveEvent->event_y);
-            } break;
-            case XCB_CONFIGURE_NOTIFY:
-            {
-                // Resizing - note that this is also triggered by moving the window, but should be
-                // passed anyway since a change in the x/y could mean an upper-left resize.
-                // The application layer can decide what to do with this.
-                xcb_configure_notify_event_t *configureEvent = (xcb_configure_notify_event_t *)event;
-
-                // Fire the event. The application layer should pick this up, but not handle it
-                // as it shouldn be visible to other parts of the application.
-                EventContext context;
-                context.data.u16[0] = configureEvent->width;
-                context.data.u16[1] = configureEvent->height;
-                EventFire(EVENT_CODE_RESIZED, 0, context);
-            } break;
-            case XCB_CLIENT_MESSAGE:
-            {
-                cm = (xcb_client_message_event_t*)event;
-
-                //window close
-                if(cm->data.data32[0] == state->wmDeleteWin)
-                {
-                    quitFlagged = true;
-                }
-            } break;
-            default:
-                //something else
+            event = xcb_poll_for_event(state->connection);
+            if(event == 0)
                 break;
+
+            switch(event->response_type & ~0x80)
+            {
+                case XCB_KEY_PRESS:
+                case XCB_KEY_RELEASE:
+                {
+                    //key press event xcb_key_press_event_t and release are the same
+                    xcb_key_press_event_t* kbEvent = (xcb_key_press_event_t*)event;
+                    b8 pressed = event->response_type == XCB_KEY_PRESS;
+                    xcb_keycode_t code = kbEvent->detail;
+                    KeySym keySym = XkbKeycodeToKeysym(
+                        state->display,
+                        (KeyCode)code,
+                        0,
+                        code & ShiftMask ? 1 : 0);
+
+                    Keys key = TranslateKeycode(keySym);
+
+                    //pass to input subsystem
+                    InputProcessKey(key, pressed);
+                } break;
+                case XCB_BUTTON_PRESS:
+                case XCB_BUTTON_RELEASE:
+                {
+                    xcb_button_press_event_t* mouseEvent = (xcb_button_press_event_t*)event;
+                    b8 pressed = event->response_type == XCB_BUTTON_PRESS;
+                    Buttons mouseButton = BUTTON_MAX_BUTTONS;
+                    switch(mouseEvent->detail)
+                    {
+                        case XCB_BUTTON_INDEX_1:
+                            mouseButton = BUTTON_LEFT;
+                            break;
+                        case XCB_BUTTON_INDEX_2:
+                            mouseButton = BUTTON_MIDDLE;
+                            break;
+                        case XCB_BUTTON_INDEX_3:
+                            mouseButton = BUTTON_RIGHT;
+                            break;
+                    }
+
+                    //pass to input subsystem
+                    if(mouseButton != BUTTON_MAX_BUTTONS)
+                        InputProcessButton(mouseButton, pressed);
+                } break;
+                case XCB_MOTION_NOTIFY:
+                {
+                    //mouse movement
+                    xcb_motion_notify_event_t* moveEvent = (xcb_motion_notify_event_t*)event;
+
+                    //pass to input subsystem
+                    InputProcessMouseMove(moveEvent->event_x, moveEvent->event_y);
+                } break;
+                case XCB_CONFIGURE_NOTIFY:
+                {
+                    // Resizing - note that this is also triggered by moving the window, but should be
+                    // passed anyway since a change in the x/y could mean an upper-left resize.
+                    // The application layer can decide what to do with this.
+                    xcb_configure_notify_event_t *configureEvent = (xcb_configure_notify_event_t *)event;
+
+                    // Fire the event. The application layer should pick this up, but not handle it
+                    // as it shouldn be visible to other parts of the application.
+                    EventContext context;
+                    context.data.u16[0] = configureEvent->width;
+                    context.data.u16[1] = configureEvent->height;
+                    EventFire(EVENT_CODE_RESIZED, 0, context);
+                } break;
+                case XCB_CLIENT_MESSAGE:
+                {
+                    cm = (xcb_client_message_event_t*)event;
+
+                    //window close
+                    if(cm->data.data32[0] == state->wmDeleteWin)
+                    {
+                    quitFlagged = true;
+                    }
+                } break;
+                default:
+                    //something else
+                 break;
+            }
+
+            free(event);
         }
-
-        free(event);
+        return !quitFlagged
     }
-
-    return !quitFlagged;
+    return true;
 }
 
 void* PlatformAllocate(u64 _size, b8 _aligned)
@@ -352,27 +356,27 @@ void PlatformGetRequiredExtensionNames(const char*** _namesDArray)
 }
 
 //surface creation for Vulkan
-b8 PlatformCreateVulkanSurface(struct PlatformState* _state, struct VulkanContext* _context)
+b8 PlatformCreateVulkanSurface(struct VulkanContext* _context)
 {
-    //simply cast known type
-    InternalState* state = (InternalState*)_state->InternalState;
+    if(!pState)
+        return false;
 
     VkXcbSurfaceCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR };
-    createInfo.connection = state->connection;
-    createInfo.window = state->window;
+    createInfo.connection = pState->connection;
+    createInfo.window = pState->window;
 
     VkResult result = vkCreateXcbSurfaceKHR(
         _context->instance,
         &createInfo,
         _context->allocator,
-        &state->surface);
+        &pState->surface);
     if(result != VK_SUCCESS)
     {
         LOG_FATAL("Vulkan surface creation failed.");
         return false;
     }
 
-    _context->surface = state->surface;
+    _context->surface = pState->surface;
     return true;
 }
 

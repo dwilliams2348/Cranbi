@@ -42,7 +42,7 @@ typedef struct MemorySystemState
 
 static MemorySystemState* pState;
 
-void InitializeMemory(u64* _memoryRequirement, void* _state)
+void MemorySystemInitialize(u64* _memoryRequirement, void* _state)
 {
     *_memoryRequirement = sizeof(MemorySystemState);
     if(_state == 0)
@@ -53,7 +53,7 @@ void InitializeMemory(u64* _memoryRequirement, void* _state)
     PlatformZeroMem(&pState->stats, sizeof(pState->stats));
 }
 
-void ShutdownMemory(void* _state)
+void MemorySystemShutdown(void* _state)
 {
     pState = 0;
 }

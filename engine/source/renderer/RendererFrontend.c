@@ -4,18 +4,27 @@
 #include "core/Logger.h"
 #include "core/CMemory.h"
 
-//backend render context
-static RendererBackend* backend = 0;
-
-b8 RendererInitialize(const char* _appName, struct PlatformState* _platform)
+typedef struct RenderSystemState
 {
-    backend = cAllocate(sizeof(RendererBackend), MEMORY_TAG_RENDERER);
+    RendererBackend backend;
+} RenderSystemState;
+
+//backend render context
+static RenderSystemState* pState;
+
+b8 RendererSystemInitialize(u64* _memoryRequirement, void* _state, const char* _appName)
+{
+    *_memoryRequirement = sizeof(RenderSystemState);
+    if(_state == 0)
+        return true;
+    
+    pState = _state;
 
     //TODO: make configurable
-    RendererBackendCreate(RENDERER_BACKEND_TYPE_VULKAN, _platform, backend);
-    backend->frameNumber = 0;
+    RendererBackendCreate(RENDERER_BACKEND_TYPE_VULKAN, &pState->backend);
+    pState->backend.frameNumber = 0;
 
-    if(!backend->Initialize(backend, _appName, _platform))
+    if(!pState->backend.Initialize(&pState->backend, _appName))
     {
         LOG_FATAL("Renderer backend failed to initialize. Shutting down,");
         return false;
@@ -24,30 +33,38 @@ b8 RendererInitialize(const char* _appName, struct PlatformState* _platform)
     return true;
 }
 
-void RendererShutdown()
+void RendererSystemShutdown(void* _state)
 {
-    backend->Shutdown(backend);
-    cFree(backend, sizeof(RendererBackend), MEMORY_TAG_RENDERER);
-}
+    if(pState)
+        pState->backend.Shutdown(&pState->backend);
 
-void RendererOnResize(u16 _width, u16 _height)
-{
-    if(backend)
-        backend->Resize(backend, _width, _height);
-    else
-        LOG_WARN("Renderer backend does not exist to accept resize: %i, %i", _width, _height);
+    pState = 0;
 }
 
 b8 RendererBeginFrame(f32 _deltaTime)
 {
-    return backend->BeginFrame(backend, _deltaTime);
+    if(!pState)
+        return false;
+
+    return pState->backend.BeginFrame(&pState->backend, _deltaTime);
 }
 
 b8 RendererEndFrame(f32 _deltaTime)
 {
-    b8 result = backend->EndFrame(backend, _deltaTime);
-    backend->frameNumber++;
+    if(!pState)
+        return false;
+    
+    b8 result = pState->backend.EndFrame(&pState->backend, _deltaTime);
+    pState->backend.frameNumber++;
     return result;
+}
+
+void RendererOnResize(u16 _width, u16 _height)
+{
+    if(pState)
+        pState->backend.Resize(&pState->backend, _width, _height);
+    else
+        LOG_WARN("Renderer backend does not exist to accept resize: %i, %i", _width, _height);
 }
 
 b8 RendererDrawFrame(RenderPacket* _packet)
@@ -55,7 +72,6 @@ b8 RendererDrawFrame(RenderPacket* _packet)
     //if the begin frame returned successfull mid frame ops can continue
     if(RendererBeginFrame(_packet->deltaTime))
     {
-
         //end frame, if this is fails it is likely unrecoverable
         b8 result = RendererEndFrame(_packet->deltaTime);
         if(!result)

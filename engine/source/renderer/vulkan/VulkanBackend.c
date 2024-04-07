@@ -35,7 +35,7 @@ void CreateCommandBuffers(RendererBackend* _backend);
 void RegenerateFramebuffers(RendererBackend* _backend, VulkanSwapchain* _swapchain, VulkanRenderpass* _renderpass);
 b8 RecreateSwapchain(RendererBackend* _backend);
 
-b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appName, struct PlatformState* _platform)
+b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appName)
 {
     //function pointers
     context.FindMemoryIndex = FindMemoryIndex;
@@ -152,7 +152,7 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
 
     //surface creation
     LOG_INFO("Creating Vulkan surface...");
-    if(!PlatformCreateVulkanSurface(_platform, &context))
+    if(!PlatformCreateVulkanSurface(&context))
     {
         LOG_ERROR("Failed to create platform surface.");
         return false;

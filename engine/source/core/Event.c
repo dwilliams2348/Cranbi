@@ -27,50 +27,50 @@ typedef struct EventSystemState
 /**
  * Event system internal state
 */
-static b8 isInitialized = false;
-static EventSystemState state;
+static EventSystemState* pState;
 
-b8 EventInitialize()
+void EventSystemInitialize(u64* _memoryRequirement, void* _state)
 {
-    if(isInitialized)
-        return false;
+    *_memoryRequirement = sizeof(EventSystemState);
+    if(_state == 0)
+        return;
 
-    isInitialized = false;
-    cZeroMemory(&state, sizeof(state));
-
-    isInitialized = true;
-    return true;
+    cZeroMemory(_state, sizeof(EventSystemState));
+    pState = _state;
 }
 
-void EventShutdown()
+void EventSystemShutdown(void* _state)
 {
+    if(pState)
+    {
     //free the event arrays, and objects pointed to should be destroyed on their own
     for(u16 i = 0; i < MAX_MESSAGE_CODES; ++i)
     {
-        if(state.registered[i].events != 0)
+        if(pState->registered[i].events != 0)
         {
-            DArrayDestroy(state.registered[i].events);
-            state.registered[i].events = 0;
+            DArrayDestroy(pState->registered[i].events);
+            pState->registered[i].events = 0;
         }
+    }
     }
 }
 
 b8 EventRegister(u16 _code, void* _listener, PFNOnEvent _onEvent)
 {
-    if(isInitialized == false)
+    if(!pState)
     {
         return false;
     }
 
-    if(state.registered[_code].events == 0)
+    if(pState->registered[_code].events == 0)
     {
-        state.registered[_code].events = DArrayCreate(RegisteredEvent);
+        pState->registered[_code].events = DArrayCreate(RegisteredEvent);
     }
 
-    u64 registeredCount = DArrayLength(state.registered[_code].events);
+    u64 registeredCount = DArrayLength(pState->registered[_code].events);
     for(u64 i = 0; i < registeredCount; ++i)
     {
-        if(state.registered[_code].events[i].listener == _listener)
+        if(pState->registered[_code].events[i].listener == _listener)
         {
             //TODO: warn
             return false;
@@ -81,31 +81,31 @@ b8 EventRegister(u16 _code, void* _listener, PFNOnEvent _onEvent)
     RegisteredEvent event;
     event.listener = _listener;
     event.callback = _onEvent;
-    DArrayPush(state.registered[_code].events, event);
+    DArrayPush(pState->registered[_code].events, event);
 
     return true;
 }
 
 b8 EventUnregister(u16 _code, void* _listener, PFNOnEvent _onEvent)
 {
-    if(isInitialized == false)
+    if(!pState)
         return false;
 
     //nothing registered to the code boot out
-    if(state.registered[_code].events == 0)
+    if(pState->registered[_code].events == 0)
     {
         //TODO: warn
         return false;
     }
 
-    u64 registeredCount = DArrayLength(state.registered[_code].events);
+    u64 registeredCount = DArrayLength(pState->registered[_code].events);
     for(u64 i = 0; i < registeredCount; ++i)
     {
-        RegisteredEvent e = state.registered[_code].events[i];
+        RegisteredEvent e = pState->registered[_code].events[i];
         if(e.listener == _listener && e.callback == _onEvent)
         {
             RegisteredEvent poppedEvent;
-            DArrayPopAt(state.registered[_code].events, i, &poppedEvent);
+            DArrayPopAt(pState->registered[_code].events, i, &poppedEvent);
             return true;
         }
     }
@@ -116,17 +116,17 @@ b8 EventUnregister(u16 _code, void* _listener, PFNOnEvent _onEvent)
 
 b8 EventFire(u16 _code, void* _sender, EventContext _context)
 {
-    if(isInitialized == false)
+    if(!pState)
         return false;
 
     //if nothing is registered to code immediately boot
-    if(state.registered[_code].events == 0)
+    if(pState->registered[_code].events == 0)
         return false;
 
-    u64 registeredCount = DArrayLength(state.registered[_code].events);
+    u64 registeredCount = DArrayLength(pState->registered[_code].events);
     for(u64 i = 0; i < registeredCount; ++i)
     {
-        RegisteredEvent e = state.registered[_code].events[i];
+        RegisteredEvent e = pState->registered[_code].events[i];
         if(e.callback(_code, _sender, e.listener, _context))
         {
             //message has been handled do not propigate to other listeners

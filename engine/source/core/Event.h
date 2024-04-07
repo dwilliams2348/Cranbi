@@ -28,8 +28,8 @@ typedef struct EventContext
 //should return true if handled
 typedef b8(*PFNOnEvent)(u16 _code, void* _sender, void* _listenInst, EventContext _data);
 
-b8 EventInitialize();
-void EventShutdown();
+void EventSystemInitialize(u64* _memoryRequirement, void* _state);
+void EventSystemShutdown(void* _state);
 
 /**
  * Register to listen for when events are sent with code.
