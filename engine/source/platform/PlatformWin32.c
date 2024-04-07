@@ -1,19 +1,28 @@
-#include "Platform.h"
+#include "platform/Platform.h"
 
 //Windows platform layer
 #if CPLATFORM_WINDOWS
 
 #include "core/Logger.h"
 #include "core/Input.h"
+#include "core/Event.h"
+
+#include "containers/DArray.h"
 
 #include <windows.h>
 #include <windowsx.h> //param input extraction
 #include <stdlib.h>
 
+//for surface creation
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_win32.h>
+#include "renderer/vulkan/VulkanTypes.inl"
+
 typedef struct InternalState
 {
     HINSTANCE hInstance;
     HWND hwnd;
+    VkSurfaceKHR surface;
 } InternalState;
 
 //clock
@@ -195,6 +204,32 @@ void PlatformSleep(u64 _ms)
     Sleep(_ms);
 }
 
+void PlatformGetRequiredExtensionNames(const char*** _namesDArray)
+{
+    DArrayPush(*_namesDArray, &"VK_KHR_win32_surface");
+}
+
+//surface creation for vulkan
+b8 PlatformCreateVulkanSurface(struct PlatformState* _state, struct VulkanContext* _context)
+{
+    //cast the known type
+    InternalState* state = (InternalState*)_state->InternalState;
+
+    VkWin32SurfaceCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+    createInfo.hinstance = state->hInstance;
+    createInfo.hwnd = state->hwnd;
+
+    VkResult result = vkCreateWin32SurfaceKHR(_context->instance, &createInfo, _context->allocator, &state->surface);
+    if(result != VK_SUCCESS)
+    {
+        LOG_FATAL("Vulkan surface creation failed.");
+        return FALSE;
+    }
+
+    _context->surface = state->surface;
+    return TRUE;
+}
+
 LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARAM _lparam)
 {
     switch(_msg)
@@ -203,20 +238,26 @@ LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARA
             //notify the OS that erasing will be handled by application to prevent flicker
             return 1;
         case WM_CLOSE:
-            //TODO: fire event for application close
-            return 0;    
+            EventContext data = {};
+            EventFire(EVENT_CODE_APPLICATION_QUIT, 0, data);
+            return TRUE;
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
         case WM_SIZE:
         {
             //get updated size of window
-            //RECT r;
-            //GetClientRect(hwnd, &r);
-            //u32 width = r.right - r.left;
-            //u32 height = r.bottom - r.top;
+            RECT r;
+            GetClientRect(_hwnd, &r);
+            u32 width = r.right - r.left;
+            u32 height = r.bottom - r.top;
 
-            //TODO: fire an event for window resize
+            //fire the event, the applciation layer will pick this up but not handle it
+            //as it should be visible for other parts of the application
+            EventContext context;
+            context.data.u16[0] = (u16)width;
+            context.data.u16[1] = (u16)height;
+            EventFire(EVENT_CODE_RESIZED, 0, context);
         } break;
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN:

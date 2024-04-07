@@ -15,3 +15,8 @@ char* StringDuplicate(const char* _str)
     cCopyMemory(copy, _str, length + 1);
     return copy;
 }
+
+b8 StringsEqual(const char* _str0, const char* _str1)
+{
+    return strcmp(_str0, _str1) == 0;
+}

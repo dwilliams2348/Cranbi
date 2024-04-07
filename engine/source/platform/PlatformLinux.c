@@ -6,6 +6,8 @@
 #include "core/Event.h"
 #include "core/Input.h"
 
+#include "containers/DArray.h"
+
 #include <xcb/xcb.h>
 #include <X11/keysym.h>
 #include <X11/XKBlib.h> //sudo apt-get install libx11-dev
@@ -23,6 +25,11 @@
 #include <stdio.h>
 #include <string.h>
 
+//for surface creation
+#define VK_USE_PLATFORM_XCB_KHR
+#include <vulkan/vulkan.h>
+#include "renderer/vulkan/VulkanTypes.inl"
+
 typedef struct InternalState
 {
     Display* display;
@@ -31,6 +38,7 @@ typedef struct InternalState
     xcb_screen_t* screen;
     xcb_atom_t wmProtocols;
     xcb_atom_t wmDeleteWin;
+    VkSurfaceKHR surface;
 } InternalState;
 
 //key translation
@@ -242,7 +250,17 @@ b8 PlatformPumpMessages(PlatformState* _state)
             } break;
             case XCB_CONFIGURE_NOTIFY:
             {
-                //TODO: resizing
+                // Resizing - note that this is also triggered by moving the window, but should be
+                // passed anyway since a change in the x/y could mean an upper-left resize.
+                // The application layer can decide what to do with this.
+                xcb_configure_notify_event_t *configureEvent = (xcb_configure_notify_event_t *)event;
+
+                // Fire the event. The application layer should pick this up, but not handle it
+                // as it shouldn be visible to other parts of the application.
+                EventContext context;
+                context.data.u16[0] = configureEvent->width;
+                context.data.u16[1] = configureEvent->height;
+                EventFire(EVENT_CODE_RESIZED, 0, context);
             } break;
             case XCB_CLIENT_MESSAGE:
             {
@@ -326,6 +344,36 @@ void PlatformSleep(u64 _ms)
 
     usleep((_ms % 1000) * 1000);
 #endif
+}
+
+void PlatformGetRequiredExtensionNames(const char*** _namesDArray)
+{
+    DArrayPush(*_namesDArray, &"VK_KHR_xcb_surface");
+}
+
+//surface creation for Vulkan
+b8 PlatformCreateVulkanSurface(struct PlatformState* _state, struct VulkanContext* _context)
+{
+    //simply cast known type
+    InternalState* state = (InternalState*)_state->InternalState;
+
+    VkXcbSurfaceCreateInfoKHR createInfo = { VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR };
+    createInfo.connection = state->connection;
+    createInfo.window = state->window;
+
+    VkResult result = vkCreateXcbSurfaceKHR(
+        _context->instance,
+        &createInfo,
+        _context->allocator,
+        &state->surface);
+    if(result != VK_SUCCESS)
+    {
+        LOG_FATAL("Vulkan surface creation failed.");
+        return FALSE;
+    }
+
+    _context->surface = state->surface;
+    return TRUE;
 }
 
 Keys TranslateKeycode(u32 _xKeycode)

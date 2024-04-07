@@ -1,5 +1,5 @@
 {
-    "workbench.colorTheme": "Gruvbox Dark (Hard)",
+    "workbench.colorTheme": "Visual Studio Dark - C++",
     "xmlTools.enforcePrettySelfClosingTagOnFormat": true,
     "editor.minimap.enabled": false,
     "terminal.integrated.shell.windows": "c:/Program Files/PowerShell/7/pwsh.exe",
@@ -56,9 +56,11 @@
         "type_traits": "c",
         "typeinfo": "c",
         "windowsx.h": "c",
-        "vulkan_platform.h": "c",
-        "renderer_frontend.h": "c",
+        "VulkanPlatform.h": "c",
+        "RendererFrontend.h": "c",
         "system_error": "cpp",
-        "asserts.h": "c"
+        "Asserts.h": "c",
+        "CMemory.h": "c",
+        "xlocale": "c"
     }
 }

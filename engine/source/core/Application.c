@@ -7,6 +7,9 @@
 #include "core/CMemory.h"
 #include "core/Event.h"
 #include "core/Input.h"
+#include "core/Clock.h"
+
+#include "renderer/RendererFrontend.h"
 
 typedef struct ApplicationState
 {
@@ -16,6 +19,7 @@ typedef struct ApplicationState
     PlatformState platform;
     i16 width;
     i16 height;
+    Clock clock;
     f64 lastTime;
 }ApplicationState;
 
@@ -25,6 +29,7 @@ static ApplicationState appState;
 //event handlers
 b8 ApplicationOnEvent(u16 _code, void* _sender, void* _listenerInst, EventContext _context);
 b8 ApplicationOnKey(u16 _code, void* _sender, void* _listenerInst, EventContext _context);
+b8 ApplicationOnResize(u16 _code, void* _sender, void* _listenerInst, EventContext _context);
 
 b8 ApplicationCreate(Game* _gameInst)
 {
@@ -40,14 +45,6 @@ b8 ApplicationCreate(Game* _gameInst)
     InitializeLogging();
     InputInitialize();
 
-    //TODO: remove this
-    LOG_FATAL("A fatal test message: %f", 3.14f);
-    LOG_ERROR("An error test message: %d", 42);
-    LOG_WARN("A warn test message: %s", "suck ween");
-    LOG_INFO("An info test message: %f", 6.9f);
-    LOG_DEBUG("A debug test message: %f", 42.0f);
-    LOG_TRACE("A trace test message");
-
     //setting up application state
     appState.isRunning = TRUE;
     appState.isSuspended = FALSE;
@@ -61,6 +58,7 @@ b8 ApplicationCreate(Game* _gameInst)
     EventRegister(EVENT_CODE_APPLICATION_QUIT, 0, ApplicationOnEvent);
     EventRegister(EVENT_CODE_KEY_PRESSED, 0, ApplicationOnKey);
     EventRegister(EVENT_CODE_KEY_RELEASED, 0, ApplicationOnKey);
+    EventRegister(EVENT_CODE_RESIZED, 0, ApplicationOnResize);
 
     if(!PlatformStartup(&appState.platform, 
         _gameInst->appConfig.name, 
@@ -69,6 +67,12 @@ b8 ApplicationCreate(Game* _gameInst)
         _gameInst->appConfig.startWidth, 
         _gameInst->appConfig.startHeight))
     {
+        return FALSE;
+    }
+
+    if(!RendererInitialize(_gameInst->appConfig.name, &appState.platform))
+    {
+        LOG_FATAL("Failed to initialize renderer. Aborting application.");
         return FALSE;
     }
 
@@ -88,6 +92,13 @@ b8 ApplicationCreate(Game* _gameInst)
 
 b8 ApplicationRun()
 {
+    ClockStart(&appState.clock);
+    ClockUpdate(&appState.clock);
+    appState.lastTime = appState.clock.elapsed;
+    f64 runningTime = 0;
+    u8 frameCount = 0;
+    f64 targetFrameSeconds = 1.f / 60;
+
     LOG_INFO(GetMemoryUsageStr());
 
     while(appState.isRunning) 
@@ -97,8 +108,14 @@ b8 ApplicationRun()
 
         if(!appState.isSuspended)
         {
+            //update clock
+            ClockUpdate(&appState.clock);
+            f64 currentTime = appState.clock.elapsed;
+            f64 delta = currentTime - appState.lastTime;
+            f64 frameStartTime = PlatformGetAbsoluteTime();
+
             //update routine
-            if(!appState.gameInst->update(appState.gameInst, (f32)0))
+            if(!appState.gameInst->update(appState.gameInst, (f32)delta))
             {
                 LOG_FATAL("Game update failed, shutting down");
                 appState.isRunning = FALSE;
@@ -106,16 +123,42 @@ b8 ApplicationRun()
             }
 
             //render routine
-            if(!appState.gameInst->render(appState.gameInst, (f32)0))
+            if(!appState.gameInst->render(appState.gameInst, (f32)delta))
             {
                 LOG_FATAL("Game render failed, shutting down");
                 appState.isRunning = FALSE;
                 break;
             }
 
+            //TODO: change packet creation
+            RenderPacket packet;
+            packet.deltaTime = delta;
+            RendererDrawFrame(&packet);
+
+            //figure out how long frame took
+            f64 frameEndTime = PlatformGetAbsoluteTime();
+            f64 frameElapsedTime = frameEndTime - frameStartTime;
+            runningTime += frameElapsedTime;
+            f64 remainingSeconds = targetFrameSeconds - frameElapsedTime;
+
+            if(remainingSeconds > 0)
+            {
+                u64 remainingMS = (remainingSeconds * 1000);
+
+                //if there is time left give it back to OS
+                b8 limitFrames = FALSE;
+                if(remainingMS > 0 && limitFrames)
+                    PlatformSleep(remainingMS - 1);
+
+                frameCount++;
+            }
+
             //NOTE: Input update/state chaning should be handled should be recorded
             //As a safety input is the last thing updated before end of frame.
-            InputUpdate(0);
+            InputUpdate(delta);
+
+            //update last time
+            appState.lastTime = currentTime;
         }
     }
 
@@ -124,13 +167,22 @@ b8 ApplicationRun()
     EventUnregister(EVENT_CODE_APPLICATION_QUIT, 0, ApplicationOnEvent);
     EventUnregister(EVENT_CODE_KEY_PRESSED, 0, ApplicationOnKey);
     EventUnregister(EVENT_CODE_KEY_RELEASED, 0, ApplicationOnKey);
+    EventUnregister(EVENT_CODE_RESIZED, 0, ApplicationOnResize);
 
     EventShutdown();
     InputShutdown();
 
+    RendererShutdown();
+
     PlatformShutdown(&appState.platform);
 
     return TRUE;
+}
+
+void ApplicationGetFramebufferSize(u32* _width, u32* _height)
+{
+    *_width = appState.width;
+    *_height = appState.height;
 }
 
 b8 ApplicationOnEvent(u16 _code, void* _sender, void* _listenerInst, EventContext _context)
@@ -185,5 +237,45 @@ b8 ApplicationOnKey(u16 _code, void* _sender, void* _listenerInst, EventContext 
         }
     }
 
+    return FALSE;
+}
+
+b8 ApplicationOnResize(u16 _code, void* _sender, void* _listenerInst, EventContext _context)
+{
+    if(_code == EVENT_CODE_RESIZED)
+    {
+        u16 width = _context.data.u16[0];
+        u16 height = _context.data.u16[1];
+
+        //check if different, if so trigger event
+        if(width != appState.width || height != appState.height)
+        {
+            appState.width = width;
+            appState.height = height;
+
+            LOG_DEBUG("Window resize: %i, %i", width, height);
+
+            //handle minimized
+            if(width == 0 || height == 0)
+            {
+                LOG_INFO("Window has been minimized, suspending application.");
+                appState.isSuspended = TRUE;
+                return TRUE;
+            }
+            else
+            {
+                if(appState.isSuspended)
+                {
+                    LOG_INFO("Window restored, resuming application.");
+                    appState.isSuspended = FALSE;
+                }
+
+                appState.gameInst->onResize(appState.gameInst, width, height);
+                RendererOnResize(width, height);
+            }
+        }
+    }
+
+    //event purposfully not handled to allow other listners to get event
     return FALSE;
 }
