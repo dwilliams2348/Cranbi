@@ -61,6 +61,18 @@
         "system_error": "cpp",
         "Asserts.h": "c",
         "CMemory.h": "c",
-        "xlocale": "c"
+        "xlocale": "c",
+        "algorithm": "cpp",
+        "functional": "cpp",
+        "xutility": "cpp",
+        "optional": "cpp",
+        "xlocmon": "cpp",
+        "xtr1common": "cpp",
+        "vector": "cpp",
+        "ios": "cpp",
+        "xiosbase": "cpp",
+        "array": "c",
+        "span": "c",
+        "xstring": "c"
     }
 }

@@ -100,3 +100,12 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.\n");
 #endif
 
 #define CCLAMP(_value, _min, _max) (_value <= _min) ? _min : (_value >= _max) ? _max : _value;
+
+// Inlining
+#ifdef _MSC_VER
+#   define CINLINE __forceinline
+#   define CNOINLINE __declspec(noinline)
+#else
+#   define CINLINE static inline
+#   define CNOINLINE
+#endif

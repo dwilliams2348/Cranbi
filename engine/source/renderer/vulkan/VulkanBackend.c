@@ -174,7 +174,7 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     LOG_INFO("Creating Vulkan renderpass...");
     VulkanRenderpassCreate(&context, &context.mainRenderpass, 
     0, 0, context.framebufferWidth, context.framebufferHeight,
-    0.f, 0.f, 0.2f, 1.f,
+    1.f, 0.f, 1.f, 1.f,
     1.f, 0);
 
     //create swapchain framebuffers
