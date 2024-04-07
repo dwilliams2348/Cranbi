@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-static b8 rand_seeded = FALSE;
+static b8 rand_seeded = false;
 
 /**
  * Note that these are here in order to prevent having to import the
@@ -37,7 +37,7 @@ f32 re_abs(f32 x) {
 i32 re_random() {
     if (!rand_seeded) {
         srand((u32)PlatformGetAbsoluteTime());
-        rand_seeded = TRUE;
+        rand_seeded = true;
     }
     return rand();
 }
@@ -45,7 +45,7 @@ i32 re_random() {
 i32 re_random_in_range(i32 min, i32 max) {
     if (!rand_seeded) {
         srand((u32)PlatformGetAbsoluteTime());
-        rand_seeded = TRUE;
+        rand_seeded = true;
     }
     return (rand() % (max - min + 1)) + min;
 }

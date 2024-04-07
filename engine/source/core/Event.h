@@ -33,31 +33,31 @@ void EventShutdown();
 
 /**
  * Register to listen for when events are sent with code.
- * Events with duplicate listener/callback combos will not be register again and will return FALSE.
+ * Events with duplicate listener/callback combos will not be register again and will return false.
  * @param _code The event code to listen for.
  * @param _listener A pointer to a listener instance. Can be 0/NULL
  * @param _onEvent The callback function pointer to be invoked when the event code is fired.
- * @returns TRUE if the event is successfully registered, otherwise FALSE.
+ * @returns true if the event is successfully registered, otherwise false.
  */
 CAPI b8 EventRegister(u16 _code, void* _listener, PFNOnEvent _onEvent);
 
 /**
  * Unregister from listening for when events are sent.
- * If no matching registration is found this returns FALSE
+ * If no matching registration is found this returns false
  * @param _code The event code to stop listening for.
  * @param _listener A pointer to a listener instance. Can be 0/NULL
  * @param _onEvent The callback function pointer to be unregistered.
- * @returns TRUE if the event is successfully unregistered, otherwise FALSE.
+ * @returns true if the event is successfully unregistered, otherwise false.
  */
 CAPI b8 EventUnregister(u16 _code, void* _listener, PFNOnEvent _onEvent);
 
 /**
  * Fires event to the listener of the code.
- * If an event handler returns TRUE the event is considered handled and wont be passed to any other listeners.
+ * If an event handler returns true the event is considered handled and wont be passed to any other listeners.
  * @param _code The event code to fire.
  * @param _sender A pointer to the sender. Can be 0/NULL
  * @param _data The event data.
- * @returns TRUE if the event is handled otherwise FALSE.
+ * @returns true if the event is handled otherwise false.
  */
 CAPI b8 EventFire(u16 _code, void* _sender, EventContext _context);
 

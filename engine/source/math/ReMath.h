@@ -207,11 +207,11 @@ inline vec2 vec2_normalized(vec2 vector){
 */
 inline b8 vec2_compare(vec2 vector0, vec2 vector1, f32 tolerance){
     if(re_abs(vector0.x - vector1.x) > tolerance)
-        return FALSE;
+        return false;
     if(re_abs(vector0.y - vector1.y) > tolerance)
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 /**
@@ -452,13 +452,13 @@ inline vec3 vec3_cross(vec3 vector0, vec3 vector1){
 */
 inline b8 vec3_compare(vec3 vector0, vec3 vector1, f32 tolerance){
     if(re_abs(vector0.x - vector1.x) > tolerance)
-        return FALSE;
+        return false;
     if(re_abs(vector0.y - vector1.y) > tolerance)
-        return FALSE;
+        return false;
     if(re_abs(vector0.z - vector1.z) > tolerance)
-        return FALSE;
+        return false;
 
-    return TRUE;
+    return true;
 }
 
 /**

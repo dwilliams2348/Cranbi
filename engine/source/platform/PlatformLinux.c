@@ -62,7 +62,7 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
     if(xcb_connection_has_error(state->connection))
     {
         LOG_FATAL("Failed to connect to the X server via XCB");
-        return FALSE;
+        return false;
     }
 
     //get data from x server
@@ -163,10 +163,10 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
     if(streamRes <= 0)
     {
         LOG_FATAL("An error occured when flushing the stream: %d", streamRes);
-        return FALSE;
+        return false;
     }
 
-    return TRUE;
+    return true;
 }
 
 void PlatformShutdown(PlatformState* _state)
@@ -188,7 +188,7 @@ b8 PlatformPumpMessages(PlatformState* _state)
     xcb_generic_event_t* event;
     xcb_client_message_event_t* cm;
 
-    b8 quitFlagged = FALSE;
+    b8 quitFlagged = false;
 
     //poll for events until null is returned
     while(event != 0)
@@ -269,7 +269,7 @@ b8 PlatformPumpMessages(PlatformState* _state)
                 //window close
                 if(cm->data.data32[0] == state->wmDeleteWin)
                 {
-                    quitFlagged = TRUE;
+                    quitFlagged = true;
                 }
             } break;
             default:
@@ -369,11 +369,11 @@ b8 PlatformCreateVulkanSurface(struct PlatformState* _state, struct VulkanContex
     if(result != VK_SUCCESS)
     {
         LOG_FATAL("Vulkan surface creation failed.");
-        return FALSE;
+        return false;
     }
 
     _context->surface = state->surface;
-    return TRUE;
+    return true;
 }
 
 Keys TranslateKeycode(u32 _xKeycode)

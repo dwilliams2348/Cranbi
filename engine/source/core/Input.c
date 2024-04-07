@@ -24,20 +24,20 @@ typedef struct InputState
 } InputState;
 
 //internal input state
-static b8 initialized = FALSE;
+static b8 initialized = false;
 static InputState state = {};
 
 void InputInitialize()
 {
     cZeroMemory(&state, sizeof(InputState));
-    initialized = TRUE;
+    initialized = true;
     LOG_INFO("Input subsystem initialized.");
 }
 
 void InputShutdown()
 {
     //TODO: add shutdown routine when needed
-    initialized = FALSE;
+    initialized = false;
 }
 
 void InputUpdate(f64 _deltaTime)
@@ -52,6 +52,33 @@ void InputUpdate(f64 _deltaTime)
 
 void InputProcessKey(Keys _key, b8 _pressed)
 {
+    if (_key == KEY_LALT) 
+    {
+        LOG_INFO("Left alt pressed.");
+    } 
+    else if (_key == KEY_RALT) 
+    {
+        LOG_INFO("Right alt pressed.");
+    }
+
+    if (_key == KEY_LCONTROL) 
+    {
+        LOG_INFO("Left ctrl pressed.");
+    } 
+    else if (_key == KEY_RCONTROL) 
+    {
+        LOG_INFO("Right ctrl pressed.");
+    }
+
+    if (_key == KEY_LSHIFT) 
+    {
+        LOG_INFO("Left shift pressed.");
+    } 
+    else if (_key == KEY_RSHIFT) 
+    {
+        LOG_INFO("Right shift pressed.");
+    }
+
     //only handle if the state actually changed
     if(state.keyboardCurr.keys[_key] != _pressed)
     {
@@ -113,65 +140,65 @@ void InputProcessMouseWheel(i8 _zDelta)
 b8 InputIsKeyDown(Keys _key)
 {
     if(!initialized)
-        return FALSE;
+        return false;
     
-    return state.keyboardCurr.keys[_key] == TRUE;
+    return state.keyboardCurr.keys[_key] == true;
 }
 
 b8 InputIsKeyUp(Keys _key)
 {
     if(!initialized)
-        return TRUE;
+        return true;
     
-    return state.keyboardCurr.keys[_key] == FALSE;
+    return state.keyboardCurr.keys[_key] == false;
 }
 
 b8 InputWasKeyDown(Keys _key)
 {
     if(!initialized)
-        return FALSE;
+        return false;
     
-    return state.keyboardPrev.keys[_key] == TRUE;
+    return state.keyboardPrev.keys[_key] == true;
 }
 
 b8 InputWasKeyUp(Keys _key)
 {
     if(!initialized)
-        return TRUE;
+        return true;
     
-    return state.keyboardPrev.keys[_key] == FALSE;
+    return state.keyboardPrev.keys[_key] == false;
 }
 
 b8 InputIsButtonDown(Buttons _button)
 {
     if(!initialized)
-        return FALSE;
+        return false;
     
-    return state.mouseCurr.buttons[_button] == TRUE;
+    return state.mouseCurr.buttons[_button] == true;
 }
 
 b8 InputIsButtonUp(Buttons _button)
 {
     if(!initialized)
-        return TRUE;
+        return true;
     
-    return state.mouseCurr.buttons[_button] == FALSE;
+    return state.mouseCurr.buttons[_button] == false;
 }
 
 b8 InputWasButtonDown(Buttons _button)
 {
     if(!initialized)
-        return FALSE;
+        return false;
     
-    return state.mousePrev.buttons[_button] == TRUE;
+    return state.mousePrev.buttons[_button] == true;
 }
 
 b8 InputWasButtonUp(Buttons _button)
 {
     if(!initialized)
-        return TRUE;
+        return true;
     
-    return state.mousePrev.buttons[_button] == FALSE;
+    return state.mousePrev.buttons[_button] == false;
 }
 
 void InputGetMousePosition(i32* _x, i32* _y)

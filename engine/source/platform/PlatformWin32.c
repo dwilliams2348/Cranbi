@@ -55,7 +55,7 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
     if(!RegisterClassA(&wc))
     {
         MessageBoxA(0, "Window registration failed", "Error", MB_ICONEXCLAMATION | MB_OK);
-        return FALSE;
+        return false;
     }
 
     //create the window
@@ -97,7 +97,7 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
         MessageBoxA(NULL, "Window creation failed", "Error", MB_ICONEXCLAMATION | MB_OK);
 
         LOG_FATAL("Window createion failed");
-        return FALSE;
+        return false;
     } 
     else { state->hwnd = handle; }
 
@@ -114,7 +114,7 @@ b8 PlatformStartup(PlatformState* _state, const char* _appName, i32 _x, i32 _y, 
     clockFrequency = 1.0 / (f64)frequency.QuadPart;
     QueryPerformanceCounter(&startTime);
 
-    return TRUE;
+    return true;
 }
 
 void PlatformShutdown(PlatformState* _state)
@@ -138,7 +138,7 @@ b8 PlatformPumpMessages(PlatformState* _state)
         DispatchMessageA(&message);
     }
 
-    return TRUE;
+    return true;
 }
 
 void* PlatformAllocate(u64 _size, b8 _aligned)
@@ -223,11 +223,11 @@ b8 PlatformCreateVulkanSurface(struct PlatformState* _state, struct VulkanContex
     if(result != VK_SUCCESS)
     {
         LOG_FATAL("Vulkan surface creation failed.");
-        return FALSE;
+        return false;
     }
 
     _context->surface = state->surface;
-    return TRUE;
+    return true;
 }
 
 LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARAM _lparam)
@@ -240,7 +240,7 @@ LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARA
         case WM_CLOSE:
             EventContext data = {};
             EventFire(EVENT_CODE_APPLICATION_QUIT, 0, data);
-            return TRUE;
+            return true;
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;

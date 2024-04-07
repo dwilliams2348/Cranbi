@@ -7,21 +7,30 @@
 #include <string.h>
 #include <stdarg.h>
 
-//all this does is log so it makes sense to be in Logger.c
-void ReportAssertionFailure(const char* _expression, const char* _msg, const char* _file, i32 _line)
+typedef struct LoggerSystemState
 {
-    LogOutput(FATAL, "Assertion Failure: %s, message: '%s', in file: %s, line: %d\n", _expression, _msg, _file, _line);
-}
+    b8 initialized;
+} LoggerSystemState;
 
-b8 InitializeLogging()
+static LoggerSystemState* pState;
+
+b8 InitializeLogging(u64* _memoryRequirement, void* _state)
 {
+    *_memoryRequirement = sizeof(LoggerSystemState);
+    if(_state == 0)
+        return true;
+
+    pState = _state;
+    pState->initialized = true;
+
     //TODO: create log file
-    return TRUE;
+    return true;
 }
 
-void ShutdownLogging()
+void ShutdownLogging(void* _state)
 {
     //TODO: cleanup logging/write queued entries
+    pState = 0;
 }
 
 void LogOutput(LogLevel _level, const char* _msg, ...)
@@ -48,4 +57,10 @@ void LogOutput(LogLevel _level, const char* _msg, ...)
     //Platform specific output
     if(isError) { PlatformConsoleWriteError(outMsg, _level); }
     else { PlatformConsoleWrite(outMsg, _level); }
+}
+
+//all this does is log so it makes sense to be in Logger.c
+void ReportAssertionFailure(const char* _expression, const char* _msg, const char* _file, i32 _line)
+{
+    LogOutput(FATAL, "Assertion Failure: %s, message: '%s', in file: %s, line: %d\n", _expression, _msg, _file, _line);
 }

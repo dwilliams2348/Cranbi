@@ -22,8 +22,16 @@ typedef enum ELogLevel {
     TRACE   = 5  //more verbose than debug
 } LogLevel;
 
-b8 InitializeLogging();
-void ShutdownLogging();
+/**
+ * @brief Initializes logging system. Call twice; once with state = 0 to get required memory size,
+ * then a second time passing allocated memory to state.
+ * 
+ * @param _memoryRequirement A pointer to hold the required memory size of internal state.
+ * @param _state 0 if just requesting memory requirement, otherwise allocated block of memory.
+ * @return b8 True on success; otherwise false.
+ */
+b8 InitializeLogging(u64* _memoryRequirement, void* _state);
+void ShutdownLogging(void* _state);
 
 CAPI void LogOutput(LogLevel _level, const char* _msg, ...);
 

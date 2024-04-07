@@ -18,10 +18,10 @@ b8 RendererInitialize(const char* _appName, struct PlatformState* _platform)
     if(!backend->Initialize(backend, _appName, _platform))
     {
         LOG_FATAL("Renderer backend failed to initialize. Shutting down,");
-        return FALSE;
+        return false;
     }
 
-    return TRUE;
+    return true;
 }
 
 void RendererShutdown()
@@ -61,9 +61,9 @@ b8 RendererDrawFrame(RenderPacket* _packet)
         if(!result)
         {
             LOG_ERROR("RendererEndFrame failed, application shutting down...");
-            return FALSE;
+            return false;
         }
     }
 
-    return TRUE;
+    return true;
 }

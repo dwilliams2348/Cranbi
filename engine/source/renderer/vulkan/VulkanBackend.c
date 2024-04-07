@@ -103,12 +103,12 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     {
         LOG_INFO("Searching for layer: %s...", requiredValidationLayerNames[i])
     
-        b8 found = FALSE;
+        b8 found = false;
         for(u32 j = 0; j < availableLayerCount; ++j)
         {
             if(StringsEqual(requiredValidationLayerNames[i], availableLayers[j].layerName))
             {
-                found = TRUE;
+                found = true;
                 LOG_INFO("Found.");
                 break;
             }
@@ -117,7 +117,7 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
         if(!found)
         {
             LOG_FATAL("Required validation layer is missing: %s", requiredValidationLayerNames[i]);
-            return FALSE;
+            return false;
         }
     }
 
@@ -155,7 +155,7 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     if(!PlatformCreateVulkanSurface(_platform, &context))
     {
         LOG_ERROR("Failed to create platform surface.");
-        return FALSE;
+        return false;
     }
     LOG_INFO("Vulkan surface created");
 
@@ -163,7 +163,7 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     if(!VulkanDeviceCreate(&context))
     {
         LOG_ERROR("Failed to create Vulkan device.");
-        return FALSE;
+        return false;
     }
 
     //swapchain creation
@@ -200,7 +200,7 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
 
         //create the fence in a signaled state, indicating that the first frame has already been "rendered"
         //this will prevent the application from waiting indefinitely for the first frame to render since it cannot render until the previous one is rendered.
-        VulkanFenceCreate(&context, TRUE, &context.inFlightFences[i]);
+        VulkanFenceCreate(&context, true, &context.inFlightFences[i]);
     }
 
     //in lfight fences should not exist at this time, clear the list, These are stored in pointers
@@ -212,7 +212,7 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     }
 
     LOG_INFO("Vulkan renderer initialized successfully");
-    return TRUE;
+    return true;
 }
 
 void VulkanRendererBackendShutdown(RendererBackend* _backend)
@@ -320,12 +320,12 @@ b8 VulkanRendererBackendBeginFrame(RendererBackend* _backend, f32 _deltaTime)
         VkResult result = vkDeviceWaitIdle(device->logicalDevice);
         if(!VulkanResultIsSuccess(result))
         {
-            LOG_ERROR("VulkanRendererBackendBeginFrame vkDeviceWaitIdle (1) failed: '%s'", VulkanResultString(result, TRUE));
-            return FALSE;
+            LOG_ERROR("VulkanRendererBackendBeginFrame vkDeviceWaitIdle (1) failed: '%s'", VulkanResultString(result, true));
+            return false;
         }
 
         LOG_INFO("Recreating swapchain, returning.");
-        return FALSE;
+        return false;
     }
 
     //check to see if framebuffer has been resized, if so new swapchain needs to be created
@@ -334,25 +334,25 @@ b8 VulkanRendererBackendBeginFrame(RendererBackend* _backend, f32 _deltaTime)
         VkResult result = vkDeviceWaitIdle(device->logicalDevice);
         if(!VulkanResultIsSuccess(result))
         {
-            LOG_ERROR("VulkanRendererBackendBeginFrame vkDeviceWaitIdle (2) failed: '%s'", VulkanResultString(result, TRUE));
-            return FALSE;
+            LOG_ERROR("VulkanRendererBackendBeginFrame vkDeviceWaitIdle (2) failed: '%s'", VulkanResultString(result, true));
+            return false;
         }
 
         //if swapchain recreation failed because window was minimized, return out before unsetting flag
         if(!RecreateSwapchain(_backend))
         {
-            return FALSE;
+            return false;
         }
 
         LOG_INFO("Resizing, returning.");
-        return FALSE;
+        return false;
     }
 
     //wait for the execution of the current frame to complete, the being free with allow to move on
     if(!VulkanFenceWait(&context, &context.inFlightFences[context.currentFrame], UINT64_MAX))
     {
         LOG_WARN("In-flight fence wait failure.");
-        return FALSE;
+        return false;
     }
 
     //acquire the next image from the swapchain, pass along the semaphore that should be signaled when this completes.
@@ -364,13 +364,13 @@ b8 VulkanRendererBackendBeginFrame(RendererBackend* _backend, f32 _deltaTime)
     0,
     &context.imageIndex))
     {
-        return FALSE;
+        return false;
     }
 
     //begin recording commands
     VulkanCommandBuffer* commandBuffer = &context.graphicsCommandBuffers[context.imageIndex];
     VulkanCommandBufferReset(commandBuffer);
-    VulkanCommandBufferBegin(commandBuffer, FALSE, FALSE, FALSE);
+    VulkanCommandBufferBegin(commandBuffer, false, false, false);
 
     //dynamic state
     VkViewport viewport;
@@ -396,7 +396,7 @@ b8 VulkanRendererBackendBeginFrame(RendererBackend* _backend, f32 _deltaTime)
     //begin render pass
     VulkanRenderpassBegin(commandBuffer, &context.mainRenderpass, context.swapchain.framebuffers[context.imageIndex].handle);
 
-    return TRUE;
+    return true;
 }
 
 b8 VulkanRendererBackendEndFrame(RendererBackend* _backend, f32 _deltaTime)
@@ -443,8 +443,8 @@ b8 VulkanRendererBackendEndFrame(RendererBackend* _backend, f32 _deltaTime)
     VkResult result = vkQueueSubmit(context.device.graphicsQueue, 1, &submitInfo, context.inFlightFences[context.currentFrame].handle);
     if(result != VK_SUCCESS)
     {
-        LOG_ERROR("vkQueueSubmit failed with result: %s", VulkanResultString(result, TRUE));
-        return FALSE;
+        LOG_ERROR("vkQueueSubmit failed with result: %s", VulkanResultString(result, true));
+        return false;
     }
 
     VulkanCommandBufferUpdateSubmitted(commandBuffer);
@@ -459,7 +459,7 @@ b8 VulkanRendererBackendEndFrame(RendererBackend* _backend, f32 _deltaTime)
         context.queueCompleteSemaphores[context.currentFrame],
         context.imageIndex);
 
-    return TRUE;
+    return true;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VKDebugCallback(
@@ -519,7 +519,7 @@ void CreateCommandBuffers(RendererBackend* _backend)
             VulkanCommandBufferFree(&context, context.device.graphicsCommandPool, &context.graphicsCommandBuffers[i]);
 
         cZeroMemory(&context.graphicsCommandBuffers[i], sizeof(VulkanCommandBuffer));
-        VulkanCommandBufferAllocate(&context, context.device.graphicsCommandPool, TRUE, &context.graphicsCommandBuffers[i]);
+        VulkanCommandBufferAllocate(&context, context.device.graphicsCommandPool, true, &context.graphicsCommandBuffers[i]);
     }
 
     LOG_INFO("Vulkan command buffers created.");
@@ -550,18 +550,18 @@ b8 RecreateSwapchain(RendererBackend* _backend)
     if(context.recreatingSwapchain)
     {
         LOG_DEBUG("RecreateSwapchain called when already recreating, returning.");
-        return FALSE;
+        return false;
     }
 
     //detect if window is too small to be drawn to
     if(context.framebufferWidth == 0 || context.framebufferHeight == 0)
     {
         LOG_DEBUG("RecreateSwapchain called when window is < 1 in a diemnsion, returning.");
-        return FALSE;
+        return false;
     }
 
     //mark as recreating swapchain
-    context.recreatingSwapchain = TRUE;
+    context.recreatingSwapchain = true;
 
     //wait for operations to complete
     vkDeviceWaitIdle(context.device.logicalDevice);
@@ -605,7 +605,7 @@ b8 RecreateSwapchain(RendererBackend* _backend)
     CreateCommandBuffers(_backend);
 
     //clear recreating flag
-    context.recreatingSwapchain = FALSE;
+    context.recreatingSwapchain = false;
 
-    return TRUE;
+    return true;
 }

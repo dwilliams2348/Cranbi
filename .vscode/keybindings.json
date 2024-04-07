@@ -1,0 +1,11 @@
+[
+    {
+        "key": "ctrl+r ctrl+t",
+        "command": "workbench.action.tasks.runTask"
+    },
+    {
+        "key": "ctrl+shift+c",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Clean Everything"
+    }
+]

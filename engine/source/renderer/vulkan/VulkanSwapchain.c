@@ -54,15 +54,15 @@ b8 VulkanSwapchainAcquireNextImageIndex(
     {
         //trigger swapchain recreation, then return from render loop
         VulkanSwapchainRecreate(_context, _context->framebufferWidth, _context->framebufferHeight, _swapchain);
-        return FALSE;
+        return false;
     }
     else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
         LOG_FATAL("Failed to acquire swapchain image.");
-        return FALSE;
+        return false;
     }
 
-    return TRUE;
+    return true;
 }
 
 void VulkanSwapchainPresent(
@@ -100,10 +100,9 @@ void create(VulkanContext* _context, u32 _width, u32 _height, VulkanSwapchain* _
     LOG_INFO("Creating Vulkan swapchain...");
 
     VkExtent2D swapchainExtent = { _width, _height };
-    _swapchain->maxFramesInFlight = 2; //triple buffering
 
     //choose swap surface format
-    b8 found = FALSE;
+    b8 found = false;
     for(u32 i = 0; i < _context->device.swapchainSupport.formatCount; ++i)
     {
         VkSurfaceFormatKHR format = _context->device.swapchainSupport.formats[i];
@@ -112,7 +111,7 @@ void create(VulkanContext* _context, u32 _width, u32 _height, VulkanSwapchain* _
             format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
             _swapchain->imageFormat = format;
-            found = TRUE;
+            found = true;
             break;
         }
     }
@@ -148,6 +147,8 @@ void create(VulkanContext* _context, u32 _width, u32 _height, VulkanSwapchain* _
     u32 imageCount = _context->device.swapchainSupport.capabilities.minImageCount + 1;
     if(_context->device.swapchainSupport.capabilities.maxImageCount > 0 && imageCount > _context->device.swapchainSupport.capabilities.maxImageCount)
         imageCount = _context->device.swapchainSupport.capabilities.maxImageCount;
+
+    _swapchain->maxFramesInFlight = imageCount - 1;
 
     //swapchain create info
     VkSwapchainCreateInfoKHR swapchainCreateInfo = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
@@ -228,7 +229,7 @@ void create(VulkanContext* _context, u32 _width, u32 _height, VulkanSwapchain* _
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        TRUE,
+        true,
         VK_IMAGE_ASPECT_DEPTH_BIT,
         &_swapchain->depthAttachment);
 

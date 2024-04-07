@@ -17,6 +17,7 @@ struct MemoryStats
 static const char* memoryTagStrings[MEMORY_TAG_MAX_TAGS] = {
     "UNKNOWN    ",
     "ARRAY      ",
+    "LINEAR_ALLC",
     "DARRAY     ",
     "DICT       ",
     "RING_QUEUE ",
@@ -33,16 +34,28 @@ static const char* memoryTagStrings[MEMORY_TAG_MAX_TAGS] = {
     "ENTITY_NODE",
     "SCENE      "};
 
-static struct MemoryStats stats;
-
-void InitializeMemory()
+typedef struct MemorySystemState
 {
-    PlatformZeroMem(&stats, sizeof(stats));
+    struct MemoryStats stats;
+    u64 allocCount;
+} MemorySystemState;
+
+static MemorySystemState* pState;
+
+void InitializeMemory(u64* _memoryRequirement, void* _state)
+{
+    *_memoryRequirement = sizeof(MemorySystemState);
+    if(_state == 0)
+        return;
+    
+    pState = _state;
+    pState->allocCount = 0;
+    PlatformZeroMem(&pState->stats, sizeof(pState->stats));
 }
 
-void ShutdownMemory()
+void ShutdownMemory(void* _state)
 {
-
+    pState = 0;
 }
 
 void* cAllocate(u64 _size, MemoryTag _tag)
@@ -52,11 +65,15 @@ void* cAllocate(u64 _size, MemoryTag _tag)
         LOG_WARN("CAllocate called using MEMORY_TAG_UKNOWN, re-class this allocation.");
     }
 
-    stats.totalAllocated += _size;
-    stats.taggedAllocations[_tag] += _size;
+    if(pState)
+    {
+        pState->stats.totalAllocated += _size;
+        pState->stats.taggedAllocations[_tag] += _size;
+        pState->allocCount++;
+    }
 
-    //TODO: detect mem alignment
-    void* block = PlatformAllocate(_size, FALSE);
+    //TODO: memory alignment
+    void* block = PlatformAllocate(_size, false);
     PlatformZeroMem(block, _size);
     return block;
 }
@@ -68,11 +85,11 @@ void cFree(void* _block, u64 _size, MemoryTag _tag)
         LOG_WARN("CFree called using MEMORY_TAG_UKNOWN, re-class this allocation.");
     }
 
-    stats.totalAllocated -= _size;
-    stats.taggedAllocations[_tag] -= _size;
+    pState->stats.totalAllocated -= _size;
+    pState->stats.taggedAllocations[_tag] -= _size;
 
     //TODO: mem alignment
-    PlatformFree(_block, FALSE);
+    PlatformFree(_block, false);
 }
 
 void* cZeroMemory(void* _block, u64 _size)
@@ -102,26 +119,26 @@ char* GetMemoryUsageStr()
     {
         char unit[4] = "XiB";
         float amount = 1.f;
-        if(stats.taggedAllocations[i] >= gib)
+        if(pState->stats.taggedAllocations[i] >= gib)
         {
             unit[0] = 'G';
-            amount = stats.taggedAllocations[i] / (float)gib;
+            amount = pState->stats.taggedAllocations[i] / (float)gib;
         }
-        else if(stats.taggedAllocations[i] >= mib)
+        else if(pState->stats.taggedAllocations[i] >= mib)
         {
             unit[0] = 'M';
-            amount = stats.taggedAllocations[i] / (float)mib;
+            amount = pState->stats.taggedAllocations[i] / (float)mib;
         }
-        else if(stats.taggedAllocations[i] >= kib)
+        else if(pState->stats.taggedAllocations[i] >= kib)
         {
             unit[0] = 'K';
-            amount = stats.taggedAllocations[i] / (float)kib;
+            amount = pState->stats.taggedAllocations[i] / (float)kib;
         }
         else
         {
             unit[0] = 'B';
             unit[1] = 0;
-            amount = (float)stats.taggedAllocations[i];
+            amount = (float)pState->stats.taggedAllocations[i];
         }
 
         i32 length = snprintf(buffer + offset, 8000, "  %s: %.2f%s\n", memoryTagStrings[i], amount, unit);
@@ -132,4 +149,12 @@ char* GetMemoryUsageStr()
     char* outStr = StringDuplicate(buffer);
 
     return outStr;
+}
+
+u64 GetMemoryAllocCount()
+{
+    if(pState)
+        return pState->allocCount;
+    
+    return 0;
 }

@@ -21,5 +21,7 @@ b8 CreateGame(Game* _outGame)
     //create game state
     _outGame->state = cAllocate(sizeof(GameState), MEMORY_TAG_GAME);
 
-    return TRUE;
+    _outGame->applicationState = 0;
+
+    return true;
 }

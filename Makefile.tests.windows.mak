@@ -2,10 +2,10 @@ DIR := $(subst /,\,${CURDIR})
 BUILD_DIR := bin
 OBJ_DIR := obj
 
-ASSEMBLY := sandbox
+ASSEMBLY := tests
 EXTENSION := .exe
 COMPILER_FLAGS := -g -MD -Werror=vla -Wno-missing-braces -fdeclspec #-fPIC
-INCLUDE_FLAGS := -Iengine\source -Isandbox\source 
+INCLUDE_FLAGS := -Iengine\source -Itests\source 
 LINKER_FLAGS := -g -lengine.lib -L$(OBJ_DIR)\engine -L$(BUILD_DIR) #-Wl,-rpath,.
 DEFINES := -D_DEBUG -DCIMPORT
 
@@ -14,7 +14,7 @@ rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 SRC_FILES := $(call rwildcard,$(ASSEMBLY)/,*.c) # Get all .c files
 DIRECTORIES := \$(ASSEMBLY)\source $(subst $(DIR),,$(shell dir $(ASSEMBLY)\source /S /AD /B | findstr /i source)) # Get all directories under source.
-OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o) # Get all compiled .c.o objects for sandbox
+OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o) # Get all compiled .c.o objects for tests
 
 all: scaffold compile link
 
@@ -41,3 +41,5 @@ clean: # clean build directory
 $(OBJ_DIR)/%.c.o: %.c # compile .c to .c.o object
 	@echo   $<...
 	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+
+-include $(OBJ_FILES:.o=.d)

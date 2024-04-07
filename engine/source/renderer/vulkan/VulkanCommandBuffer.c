@@ -57,8 +57,8 @@ void VulkanCommandBufferReset(VulkanCommandBuffer* _commandBuffer)
 
 void VulkanCommandBufferAllocateAndBeginSingleUse(VulkanContext* _context, VkCommandPool _pool, VulkanCommandBuffer* _outCommandBuffer) 
 {
-    VulkanCommandBufferAllocate(_context, _pool, TRUE, _outCommandBuffer);
-    VulkanCommandBufferBegin(_outCommandBuffer, TRUE, FALSE, FALSE);
+    VulkanCommandBufferAllocate(_context, _pool, true, _outCommandBuffer);
+    VulkanCommandBufferBegin(_outCommandBuffer, true, false, false);
 }
 
 void VulkanCommandBufferEndSingleUse(VulkanContext* _context, VkCommandPool _pool, VulkanCommandBuffer* _commandBuffer, VkQueue _queue) 

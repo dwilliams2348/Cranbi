@@ -14,10 +14,10 @@ b8 RendererBackendCreate(RendererBackendType _type, struct PlatformState* _platf
         _outBackend->EndFrame = VulkanRendererBackendEndFrame;
         _outBackend->Resize = VulkanRendererBackendOnResize;
 
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 void RendererBackendDestroy(RendererBackend* _backend)

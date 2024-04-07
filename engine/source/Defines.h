@@ -18,7 +18,7 @@ typedef double              f64;
 
 //bool types
 typedef int                 b32;
-typedef char                b8;
+typedef _Bool                b8;
 
 //define static asserts
 #if defined(__clang__) || defined(__gcc__)
@@ -41,8 +41,8 @@ STATIC_ASSERT(sizeof(i64) == 8, "Expected i64 to be 8 bytes.\n");
 STATIC_ASSERT(sizeof(f32) == 4, "Expected f32 to be 4 bytes.\n");
 STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.\n");
 
-#define TRUE    1
-#define FALSE   0
+#define true    1
+#define false   0
 
 //platform detection
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
