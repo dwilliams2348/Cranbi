@@ -219,9 +219,9 @@ b8 ApplicationRun()
     RendererSystemShutdown(appState->rendererSystemState);
     PlatformShutdown(&appState->platformSystemState);
 
-    MemorySystemShutdown(appState->memorySystemState);
-
     EventSystemShutdown(appState->eventSystemState);
+
+    MemorySystemShutdown(appState->memorySystemState);
 
     return true;
 }

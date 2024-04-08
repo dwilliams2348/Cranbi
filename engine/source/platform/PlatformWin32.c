@@ -276,6 +276,26 @@ LRESULT CALLBACK Win32ProcessMessage(HWND _hwnd, u32 _msg, WPARAM _wparam, LPARA
             b8 pressed = (_msg == WM_KEYDOWN || _msg == WM_SYSKEYDOWN);
             Keys key = (u16)_wparam;
 
+            //check for extended scan code
+            b8 isExtended = (HIWORD(_lparam) & KF_EXTENDED) == KF_EXTENDED;
+
+            //keypress only determines if *any* alt/ctrl/shift key is pressed, determine which on if so
+            if(_wparam == VK_MENU)
+            {
+                key = isExtended ? KEY_RALT : KEY_LALT;
+            }
+            else if (_wparam == VK_SHIFT)
+            {
+                //FK_EXTENDED is no set for shift
+                u32 leftShift = MapVirtualKey(VK_LSHIFT, MAPVK_VK_TO_VSC);
+                u32 scancode = ((_lparam & (0xFF << 16)) >> 10);
+                key = scancode == leftShift ? KEY_LSHIFT : KEY_RSHIFT;
+            }
+            else if(_wparam == VK_CONTROL)
+            {
+                key = isExtended ? KEY_RCONTROL : KEY_LCONTROL;
+            }
+
             //pass to input subsystem for processing
             InputProcessKey(key, pressed);
         } break;

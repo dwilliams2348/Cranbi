@@ -135,7 +135,7 @@ void create(VulkanContext* _context, u32 _width, u32 _height, VulkanSwapchain* _
     VulkanDeviceQuerySwapchainSupport(_context->device.physicalDevice, _context->surface, &_context->device.swapchainSupport);
 
     //swapchain extent
-    if(_context->device.swapchainSupport.capabilities.currentExtent.width != 0xFFFFFFFF)
+    if(_context->device.swapchainSupport.capabilities.currentExtent.width != UINT32_MAX)
         swapchainExtent = _context->device.swapchainSupport.capabilities.currentExtent;
     
     //clamp value allowed by the gpu

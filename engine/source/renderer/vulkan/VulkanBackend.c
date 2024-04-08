@@ -17,6 +17,8 @@
 
 #include "containers/DArray.h"
 
+//shaders
+#include "shaders/VulkanObjectShader.h"
 
 //static vulkan context
 static VulkanContext context;
@@ -209,6 +211,15 @@ b8 VulkanRendererBackendInitialize(RendererBackend* _backend, const char* _appNa
     for(u32 i = 0; i < context.swapchain.imageCount; ++i)
     {
         context.imagesInFlight[i] = 0;
+    }
+
+    LOG_INFO("Vulkan sync objects created successfully.");
+
+    //create builtin shaders
+    if(!VulkanObjectShaderCreate(&context, &context.objectShader))
+    {
+        LOG_ERROR("Error loading built-in basic_lighting shader.")
+        return false;
     }
 
     LOG_INFO("Vulkan renderer initialized successfully");

@@ -43,16 +43,18 @@ void EventSystemShutdown(void* _state)
 {
     if(pState)
     {
-    //free the event arrays, and objects pointed to should be destroyed on their own
-    for(u16 i = 0; i < MAX_MESSAGE_CODES; ++i)
-    {
-        if(pState->registered[i].events != 0)
+        //free the event arrays, and objects pointed to should be destroyed on their own
+        for(u16 i = 0; i < MAX_MESSAGE_CODES; ++i)
         {
-            DArrayDestroy(pState->registered[i].events);
-            pState->registered[i].events = 0;
+            if(pState->registered[i].events != 0)
+            {
+                DArrayDestroy(pState->registered[i].events);
+                pState->registered[i].events = 0;
+            }
         }
     }
-    }
+
+    pState = 0;
 }
 
 b8 EventRegister(u16 _code, void* _listener, PFNOnEvent _onEvent)

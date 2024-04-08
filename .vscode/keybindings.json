@@ -4,6 +4,16 @@
         "command": "workbench.action.tasks.runTask"
     },
     {
+        "key": "ctrl+k ctrl+d",
+        "command": "editor.action.formatDocument",
+        "when": "editorHasDocumentFormattingProvider && editorHasDocumentFormattingProvider && editorTextFocus && !editorReadonly && !inCompositeEditor"
+    },
+    {
+        "key": "shift+alt+f",
+        "command": "-editor.action.formatDocument",
+        "when": "editorHasDocumentFormattingProvider && editorHasDocumentFormattingProvider && editorTextFocus && !editorReadonly && !inCompositeEditor"
+    },
+    {
         "key": "ctrl+shift+c",
         "command": "workbench.action.tasks.runTask",
         "args": "Clean Everything"

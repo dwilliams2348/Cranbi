@@ -119,6 +119,29 @@ typedef struct VulkanFence
     b8 isSignaled;
 } VulkanFence;
 
+typedef struct VulkanShaderStage
+{
+    VkShaderModuleCreateInfo createInfo;
+    VkShaderModule handle;
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfo;
+} VulkanShaderStage;
+
+typedef struct VulkanPipeline
+{
+    VkPipeline handle;
+    VkPipelineLayout pipelineLayout;
+} VulkanPipeline;
+
+#define OBJECT_SHADER_STAGE_COUNT 2
+
+typedef struct VulkanObjectShader
+{
+    //vertex, fragment
+    VulkanShaderStage stages[OBJECT_SHADER_STAGE_COUNT];
+
+    VulkanPipeline pipeline;
+} VulkanObjectShader;
+
 typedef struct VulkanContext
 {
     //the framebuffers current width and height
@@ -164,6 +187,8 @@ typedef struct VulkanContext
     u32 currentFrame;
 
     b8 recreatingSwapchain;
+
+    VulkanObjectShader objectShader;
 
     i32 (*FindMemoryIndex)(u32 _typeFilter, u32 _propertyFlags);
 } VulkanContext;
