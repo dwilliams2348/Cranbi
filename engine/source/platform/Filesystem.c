@@ -124,7 +124,7 @@ CAPI b8 FilesystemReadAllBytes(FileHandle* _handle, u8** _outBytes, u64* _outByt
     return false;
 }
 
-b8 FileSystemWrite(FileHandle* _handle, u64 _dataSize, const void* _data, u64* _outBytesWritten) 
+b8 FilesystemWrite(FileHandle* _handle, u64 _dataSize, const void* _data, u64* _outBytesWritten) 
 {
     if(_handle->handle)
     {

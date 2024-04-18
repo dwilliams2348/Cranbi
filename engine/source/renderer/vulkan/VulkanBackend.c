@@ -232,6 +232,9 @@ void VulkanRendererBackendShutdown(RendererBackend* _backend)
 
     //destroy in opposite order of creation
 
+    //destroy shaders
+    VulkanObjectShaderDestroy(&context, &context.objectShader);
+
     //sync objects
     LOG_DEBUG("Destroying Vulkan sync objects...");
     for(u8 i = 0; i < context.swapchain.maxFramesInFlight; ++i)

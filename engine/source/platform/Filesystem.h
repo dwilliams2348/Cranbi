@@ -82,4 +82,4 @@ CAPI b8 FilesystemReadAllBytes(FileHandle* _handle, u8** _outBytes, u64* _outByt
  * @param outBytesWritten A pointer to a number which will be populated with the number of bytes actually written to the file.
  * @returns True if successful, otherwise false.
  */
-CAPI b8 FileSystemWrite(FileHandle* _handle, u64 _dataSize, const void* _data, u64* _outBytesWritten);
+CAPI b8 FilesystemWrite(FileHandle* _handle, u64 _dataSize, const void* _data, u64* _outBytesWritten);

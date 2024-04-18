@@ -91,3 +91,8 @@ typedef union mat4U
     alignas(16) vec4 rows[4];
 #endif
 } mat4;
+
+typedef struct Vertex3D
+{
+    vec3 position;
+} Vertex3D;
