@@ -11,6 +11,17 @@
         CORE_ASSERT(_expr == VK_SUCCESS);   \
     }
 
+typedef struct VulkanBuffer
+{
+    u64 totalSize;
+    VkBuffer handle;
+    VkBufferUsageFlagBits usage;
+    b8 isLocked;
+    VkDeviceMemory memory;
+    i32 memoryIndex;
+    u32 memoryPropertyFlags;
+} VulkanBuffer;
+
 typedef struct VulkanSwapchainSupportInfo
 {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -168,6 +179,9 @@ typedef struct VulkanContext
     VulkanSwapchain swapchain;
     VulkanRenderpass mainRenderpass;
 
+    VulkanBuffer objectVertexBuffer;
+    VulkanBuffer objectIndexBuffer;
+
     //darray commandbuffers
     VulkanCommandBuffer* graphicsCommandBuffers;
 
@@ -189,6 +203,9 @@ typedef struct VulkanContext
     b8 recreatingSwapchain;
 
     VulkanObjectShader objectShader;
+
+    u64 geometryVertexOffset;
+    u64 geometryIndexOffset;
 
     i32 (*FindMemoryIndex)(u32 _typeFilter, u32 _propertyFlags);
 } VulkanContext;
